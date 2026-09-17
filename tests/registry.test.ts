@@ -18,6 +18,7 @@ function deferred<T>() {
 
 class FakeConnection implements HassConnection {
   calls: string[] = [];
+  subscribeCalls: string[] = [];
   listeners = new Map<string, (event: unknown) => void>();
   unsubscribes: Array<ReturnType<typeof vi.fn>> = [];
   subscribeGates: Array<ReturnType<typeof deferred<() => void>>> = [];
@@ -38,6 +39,7 @@ class FakeConnection implements HassConnection {
   }
 
   subscribeEvents<T>(callback: (event: T) => void, eventType: string): Promise<() => void> {
+    this.subscribeCalls.push(eventType);
     this.listeners.set(eventType, callback as (event: unknown) => void);
     const unsubscribe = vi.fn();
     this.unsubscribes.push(unsubscribe);
@@ -116,7 +118,7 @@ describe("watchRegistries", () => {
 
   test("treats the unavailable label API as optional", async () => {
     const connection = new FakeConnection(async (type) => {
-      if (type === "config/label_registry/list") throw new Error("unknown command");
+      if (type === "config/label_registry/list") throw { code: "unknown_command", message: "unknown command" };
       return ({
         "config/entity_registry/list": snapshot.entities,
         "config/device_registry/list": snapshot.devices,
@@ -128,6 +130,65 @@ describe("watchRegistries", () => {
     await settle();
     expect(observed[observed.length - 1]?.snapshot?.labels).toEqual([]);
     expect(observed[observed.length - 1]?.error).toBeUndefined();
+    stop();
+  });
+
+  test("publishes transient label failures and recovers on the next registry update", async () => {
+    let failing = true;
+    const connection = new FakeConnection(async (type) => {
+      if (type === "config/label_registry/list" && failing) {
+        throw Object.assign(new Error("label registry forbidden"), { code: "unauthorized" });
+      }
+      return ({
+        "config/entity_registry/list": snapshot.entities,
+        "config/device_registry/list": snapshot.devices,
+        "config/area_registry/list": snapshot.areas,
+        "config/label_registry/list": snapshot.labels,
+      })[type];
+    });
+    const observed: RegistryWatchValue[] = [];
+    const stop = watchRegistries(hassFor(connection), (value) => observed.push(value));
+    await settle();
+    expect(observed[observed.length - 1]).toEqual({ error: "label registry forbidden" });
+    failing = false;
+    connection.emit("entity_registry_updated");
+    await settle();
+    expect(observed[observed.length - 1]?.snapshot?.labels).toEqual(snapshot.labels);
+    stop();
+  });
+
+  test("keeps a concurrent subscription failure visible and reinstalls that listener on refresh", async () => {
+    const devices = deferred<typeof snapshot.devices>();
+    const failedSubscription = deferred<() => void>();
+    const connection = new FakeConnection(async (type) => {
+      if (type === "config/device_registry/list") return devices.promise;
+      return ({
+        "config/entity_registry/list": snapshot.entities,
+        "config/area_registry/list": snapshot.areas,
+        "config/label_registry/list": snapshot.labels,
+      })[type];
+    });
+    connection.subscribeGates.push(failedSubscription);
+    const observed: RegistryWatchValue[] = [];
+    const stop = watchRegistries(hassFor(connection), (value) => observed.push(value));
+
+    failedSubscription.reject(new Error("entity updates unavailable"));
+    await settle();
+    expect(observed[observed.length - 1]).toEqual({ error: "entity updates unavailable" });
+
+    devices.resolve(snapshot.devices);
+    await settle();
+    expect(observed[observed.length - 1]).toEqual({ error: "entity updates unavailable" });
+
+    connection.emit("device_registry_updated");
+    await settle();
+    expect(connection.subscribeCalls.filter((event) => event === "entity_registry_updated")).toHaveLength(2);
+    expect(observed[observed.length - 1]?.snapshot?.devices).toEqual(snapshot.devices);
+
+    const fetchCount = connection.calls.length;
+    connection.emit("entity_registry_updated");
+    await settle();
+    expect(connection.calls).toHaveLength(fetchCount + 4);
     stop();
   });
 

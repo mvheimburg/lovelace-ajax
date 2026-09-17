@@ -21,25 +21,61 @@ const UPDATE_EVENTS = [
 const sharedByConnection = new WeakMap<HassConnection, SharedRegistryWatcher>();
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  if (error instanceof Error) return error.message;
+  if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+  return String(error);
+}
+
+function isUnsupportedCommand(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && error.code === "unknown_command";
+}
+
+interface SubscriptionState {
+  pending: boolean;
+  unsubscribe?: () => void;
+  error?: string;
 }
 
 class SharedRegistryWatcher {
   private readonly callbacks = new Set<WatchCallback>();
-  private readonly unsubscribes = new Set<() => void>();
+  private readonly subscriptions = new Map<string, SubscriptionState>(
+    UPDATE_EVENTS.map((eventType) => [eventType, { pending: false }]),
+  );
   private generation = 0;
   private stopped = false;
   private value?: RegistryWatchValue;
+  private snapshot?: RegistrySnapshot;
+  private fetchError?: string;
 
   constructor(private readonly connection: HassConnection) {
+    this.ensureSubscriptions();
     void this.refresh();
+  }
+
+  private ensureSubscriptions(): void {
     for (const eventType of UPDATE_EVENTS) {
-      void connection.subscribeEvents(() => { void this.refresh(); }, eventType)
+      const subscription = this.subscriptions.get(eventType)!;
+      if (subscription.pending || subscription.unsubscribe) continue;
+      subscription.pending = true;
+      void this.connection.subscribeEvents(() => { void this.refresh(); }, eventType)
         .then((unsubscribe) => {
-          if (this.stopped) unsubscribe();
-          else this.unsubscribes.add(unsubscribe);
+          subscription.pending = false;
+          if (this.stopped) {
+            unsubscribe();
+            return;
+          }
+          subscription.unsubscribe = unsubscribe;
+          subscription.error = undefined;
+          this.publishCurrent();
         })
-        .catch((error: unknown) => this.publish({ error: errorMessage(error) }));
+        .catch((error: unknown) => {
+          subscription.pending = false;
+          if (this.stopped) return;
+          subscription.error = errorMessage(error);
+          this.publishCurrent();
+        });
     }
   }
 
@@ -56,28 +92,41 @@ class SharedRegistryWatcher {
   }
 
   private async refresh(): Promise<void> {
+    this.ensureSubscriptions();
     const generation = ++this.generation;
     const send = <T>(type: string) => this.connection.sendMessagePromise<T>({ type });
     const entities = send<EntityRegistryEntry[]>("config/entity_registry/list");
     const devices = send<DeviceRegistryEntry[]>("config/device_registry/list");
     const areas = send<AreaRegistryEntry[]>("config/area_registry/list");
-    const labels = send<LabelRegistryEntry[]>("config/label_registry/list").catch(() => []);
+    const labels = send<LabelRegistryEntry[]>("config/label_registry/list").catch((error: unknown) => {
+      if (isUnsupportedCommand(error)) return [];
+      throw error;
+    });
     try {
       const [resolvedEntities, resolvedDevices, resolvedAreas, resolvedLabels] = await Promise.all([
         entities, devices, areas, labels,
       ]);
       if (generation !== this.generation || this.stopped) return;
-      const snapshot: RegistrySnapshot = {
+      this.snapshot = {
         entities: resolvedEntities,
         devices: resolvedDevices,
         areas: resolvedAreas,
         labels: resolvedLabels,
       };
-      this.publish({ snapshot });
+      this.fetchError = undefined;
+      this.publishCurrent();
     } catch (error) {
       if (generation !== this.generation || this.stopped) return;
-      this.publish({ error: errorMessage(error) });
+      this.fetchError = errorMessage(error);
+      this.publishCurrent();
     }
+  }
+
+  private publishCurrent(): void {
+    const subscriptionError = [...this.subscriptions.values()].find((state) => state.error)?.error;
+    const error = subscriptionError ?? this.fetchError;
+    if (error) this.publish({ error });
+    else if (this.snapshot) this.publish({ snapshot: this.snapshot });
   }
 
   private publish(value: RegistryWatchValue): void {
@@ -90,8 +139,10 @@ class SharedRegistryWatcher {
     if (this.stopped) return;
     this.stopped = true;
     this.generation += 1;
-    for (const unsubscribe of this.unsubscribes) unsubscribe();
-    this.unsubscribes.clear();
+    for (const subscription of this.subscriptions.values()) {
+      subscription.unsubscribe?.();
+      subscription.unsubscribe = undefined;
+    }
     sharedByConnection.delete(this.connection);
   }
 }
