@@ -46,13 +46,21 @@ export interface RegistrySnapshot {
 
 export interface HassConnection {
   sendMessagePromise<T>(message: { type: string }): Promise<T>;
-  subscribeEvents<T>(callback: (event: T) => void, eventType: string): Promise<() => void>;
+  subscribeEvents<T>(
+    callback: (event: T) => void,
+    eventType: string,
+  ): Promise<() => void>;
 }
 
 export interface HomeAssistant {
   connection: HassConnection;
   states: HassStates;
   language?: string;
+  callService?(
+    domain: string,
+    service: string,
+    data: Record<string, unknown>,
+  ): Promise<unknown>;
 }
 
 export type EntityRole =

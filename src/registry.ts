@@ -22,14 +22,24 @@ const sharedByConnection = new WeakMap<HassConnection, SharedRegistryWatcher>();
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
-  if (typeof error === "object" && error !== null && "message" in error && typeof error.message === "string") {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
     return error.message;
   }
   return String(error);
 }
 
 function isUnsupportedCommand(error: unknown): boolean {
-  return typeof error === "object" && error !== null && "code" in error && error.code === "unknown_command";
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "unknown_command"
+  );
 }
 
 interface SubscriptionState {
@@ -59,7 +69,10 @@ class SharedRegistryWatcher {
       const subscription = this.subscriptions.get(eventType)!;
       if (subscription.pending || subscription.unsubscribe) continue;
       subscription.pending = true;
-      void this.connection.subscribeEvents(() => { void this.refresh(); }, eventType)
+      void this.connection
+        .subscribeEvents(() => {
+          void this.refresh();
+        }, eventType)
         .then((unsubscribe) => {
           subscription.pending = false;
           if (this.stopped) {
@@ -91,21 +104,23 @@ class SharedRegistryWatcher {
     };
   }
 
-  private async refresh(): Promise<void> {
+  async refresh(): Promise<void> {
     this.ensureSubscriptions();
     const generation = ++this.generation;
-    const send = <T>(type: string) => this.connection.sendMessagePromise<T>({ type });
+    const send = <T>(type: string) =>
+      this.connection.sendMessagePromise<T>({ type });
     const entities = send<EntityRegistryEntry[]>("config/entity_registry/list");
     const devices = send<DeviceRegistryEntry[]>("config/device_registry/list");
     const areas = send<AreaRegistryEntry[]>("config/area_registry/list");
-    const labels = send<LabelRegistryEntry[]>("config/label_registry/list").catch((error: unknown) => {
+    const labels = send<LabelRegistryEntry[]>(
+      "config/label_registry/list",
+    ).catch((error: unknown) => {
       if (isUnsupportedCommand(error)) return [];
       throw error;
     });
     try {
-      const [resolvedEntities, resolvedDevices, resolvedAreas, resolvedLabels] = await Promise.all([
-        entities, devices, areas, labels,
-      ]);
+      const [resolvedEntities, resolvedDevices, resolvedAreas, resolvedLabels] =
+        await Promise.all([entities, devices, areas, labels]);
       if (generation !== this.generation || this.stopped) return;
       this.snapshot = {
         entities: resolvedEntities,
@@ -123,7 +138,9 @@ class SharedRegistryWatcher {
   }
 
   private publishCurrent(): void {
-    const subscriptionError = [...this.subscriptions.values()].find((state) => state.error)?.error;
+    const subscriptionError = [...this.subscriptions.values()].find(
+      (state) => state.error,
+    )?.error;
     const error = subscriptionError ?? this.fetchError;
     if (error) this.publish({ error });
     else if (this.snapshot) this.publish({ snapshot: this.snapshot });
@@ -147,11 +164,19 @@ class SharedRegistryWatcher {
   }
 }
 
-export function watchRegistries(hass: HomeAssistant, callback: WatchCallback): () => void {
+export function watchRegistries(
+  hass: HomeAssistant,
+  callback: WatchCallback,
+): () => void {
   let watcher = sharedByConnection.get(hass.connection);
   if (!watcher) {
     watcher = new SharedRegistryWatcher(hass.connection);
     sharedByConnection.set(hass.connection, watcher);
   }
   return watcher.add(callback);
+}
+
+/** Explicit retry also recovers subscriptions that failed during startup. */
+export function refreshRegistries(hass: HomeAssistant): void {
+  void sharedByConnection.get(hass.connection)?.refresh();
 }
