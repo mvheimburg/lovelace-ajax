@@ -1,5 +1,6 @@
 import { AegisActionCard } from "./actions";
 import "./aegis-device-card";
+import "./editors";
 export class AegisPanelCard extends AegisActionCard {
   static getConfigElement() {
     return document.createElement("aegis-panel-card-editor");
