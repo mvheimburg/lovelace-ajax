@@ -164,6 +164,18 @@ describe("Aegis visual editors", () => {
       "ajax-workshop",
       "ajax-workshop-copy",
     ]);
+    expect(Array.from(select.options).map((option) => option.text)).toEqual([
+      "Select an Aegis device",
+      "Workshop — Select an Aegis device",
+      "Workshop (ajax-workshop)",
+      "Workshop (ajax-workshop-copy)",
+    ]);
+    expect(await change(editor, '[name="title"]', "Safety")).toMatchObject({
+      device: "Workshop",
+    });
+    expect(
+      await change(editor, '[name="device"]', "ajax-workshop-copy"),
+    ).toMatchObject({ device: "ajax-workshop-copy" });
   });
 
   it("accepts a blank device stub, falls back to text, localizes labels, and rejects invalid thresholds", async () => {
@@ -246,4 +258,44 @@ describe("Aegis visual editors", () => {
       expect.not.objectContaining({ alarm_entity: expect.anything() }),
     );
   });
+});
+
+it("recovers device choices from same-Connection ready after an offline rename and removal", async () => {
+  const hass = fixture();
+  const editor = await mount(
+    "aegis-device-card-editor",
+    {
+      type: "custom:aegis-device-card",
+      device: "ajax-workshop",
+    },
+    hass,
+  );
+  hass.connection.lifecycle("disconnected");
+  await settle();
+  expect(editor.shadowRoot!.querySelector('select[name="device"]')).toBeNull();
+  expect(
+    editor.shadowRoot!.querySelector<HTMLInputElement>('input[name="device"]')
+      ?.value,
+  ).toBe("ajax-workshop");
+  hass.connection.registry.devices[0].name_by_user = "Fresh workshop";
+  hass.connection.lifecycle("ready");
+  await settle();
+  const select = editor.shadowRoot!.querySelector<HTMLSelectElement>(
+    'select[name="device"]',
+  )!;
+  expect(select.value).toBe("ajax-workshop");
+  expect(Array.from(select.options).map((option) => option.text)).toContain(
+    "Fresh workshop",
+  );
+  hass.connection.lifecycle("disconnected");
+  hass.connection.registry.entities = [];
+  hass.connection.lifecycle("ready");
+  await settle();
+  expect(
+    Array.from(
+      editor.shadowRoot!.querySelector<HTMLSelectElement>(
+        'select[name="device"]',
+      )!.options,
+    ).map((option) => option.value),
+  ).toEqual([""]);
 });

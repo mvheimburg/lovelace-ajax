@@ -58,11 +58,33 @@ class SharedRegistryWatcher {
   private value?: RegistryWatchValue;
   private snapshot?: RegistrySnapshot;
   private fetchError?: string;
+  private connected: boolean;
 
   constructor(private readonly connection: HassConnection) {
-    this.ensureSubscriptions();
-    void this.refresh();
+    this.connected = connection.connected;
+    connection.addEventListener("disconnected", this.handleDisconnected);
+    connection.addEventListener("ready", this.handleReady);
+    if (this.connected) void this.refresh();
+    else this.handleDisconnected();
   }
+
+  private handleDisconnected = (): void => {
+    this.connected = false;
+    this.generation += 1;
+    this.snapshot = undefined;
+    this.fetchError = undefined;
+    this.publish({ disconnected: true });
+  };
+
+  private handleReady = (): void => {
+    if (this.stopped) return;
+    this.connected = true;
+    // Missed registry events are not replayed after HA restores the socket.
+    this.snapshot = undefined;
+    this.fetchError = undefined;
+    this.publish({});
+    void this.refresh();
+  };
 
   private ensureSubscriptions(): void {
     for (const eventType of UPDATE_EVENTS) {
@@ -105,6 +127,12 @@ class SharedRegistryWatcher {
   }
 
   async refresh(): Promise<void> {
+    if (this.stopped) return;
+    if (!this.connected || !this.connection.connected) {
+      this.handleDisconnected();
+      return;
+    }
+    // HA restores successful and pending subscriptions itself. Only retry failures.
     this.ensureSubscriptions();
     const generation = ++this.generation;
     const send = <T>(type: string) =>
@@ -138,6 +166,10 @@ class SharedRegistryWatcher {
   }
 
   private publishCurrent(): void {
+    if (!this.connected || !this.connection.connected) {
+      this.publish({ disconnected: true });
+      return;
+    }
     const subscriptionError = [...this.subscriptions.values()].find(
       (state) => state.error,
     )?.error;
@@ -156,6 +188,11 @@ class SharedRegistryWatcher {
     if (this.stopped) return;
     this.stopped = true;
     this.generation += 1;
+    this.connection.removeEventListener(
+      "disconnected",
+      this.handleDisconnected,
+    );
+    this.connection.removeEventListener("ready", this.handleReady);
     for (const subscription of this.subscriptions.values()) {
       subscription.unsubscribe?.();
       subscription.unsubscribe = undefined;

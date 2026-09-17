@@ -14,6 +14,7 @@ interface Confirmation {
   targets: Target[];
   config: string;
   connection: HassConnection;
+  registryEpoch: number;
 }
 /** Shared confirmed action boundary. Service responses never mutate HA state. */
 export class AegisActionCard extends AegisCardBase {
@@ -25,7 +26,8 @@ export class AegisActionCard extends AegisCardBase {
       !this.config?.allow_bypass ||
       !this.registry.snapshot ||
       this.registry.error ||
-      !this.isConnected
+      !this.isConnected ||
+      !this.hass.connection.connected
     )
       return [];
     const devices = this.devices;
@@ -61,6 +63,7 @@ export class AegisActionCard extends AegisCardBase {
       targets,
       config: JSON.stringify(this.config),
       connection: this.hass.connection,
+      registryEpoch: this.registryEpoch,
     };
     this.feedback = "";
     this.requestUpdate();
@@ -79,6 +82,7 @@ export class AegisActionCard extends AegisCardBase {
     return (
       this.isConnected &&
       confirmation.connection === this.hass.connection &&
+      confirmation.registryEpoch === this.registryEpoch &&
       confirmation.config === JSON.stringify(this.config) &&
       this.config?.allow_bypass === true &&
       remaining.every(

@@ -282,8 +282,30 @@ class SharedRegistryWatcher {
         this.subscriptions = new Map(UPDATE_EVENTS.map((eventType) => [eventType, { pending: false }]));
         this.generation = 0;
         this.stopped = false;
-        this.ensureSubscriptions();
-        void this.refresh();
+        this.handleDisconnected = () => {
+            this.connected = false;
+            this.generation += 1;
+            this.snapshot = undefined;
+            this.fetchError = undefined;
+            this.publish({ disconnected: true });
+        };
+        this.handleReady = () => {
+            if (this.stopped)
+                return;
+            this.connected = true;
+            // Missed registry events are not replayed after HA restores the socket.
+            this.snapshot = undefined;
+            this.fetchError = undefined;
+            this.publish({});
+            void this.refresh();
+        };
+        this.connected = connection.connected;
+        connection.addEventListener("disconnected", this.handleDisconnected);
+        connection.addEventListener("ready", this.handleReady);
+        if (this.connected)
+            void this.refresh();
+        else
+            this.handleDisconnected();
     }
     ensureSubscriptions() {
         for (const eventType of UPDATE_EVENTS) {
@@ -329,6 +351,13 @@ class SharedRegistryWatcher {
         };
     }
     async refresh() {
+        if (this.stopped)
+            return;
+        if (!this.connected || !this.connection.connected) {
+            this.handleDisconnected();
+            return;
+        }
+        // HA restores successful and pending subscriptions itself. Only retry failures.
         this.ensureSubscriptions();
         const generation = ++this.generation;
         const send = (type) => this.connection.sendMessagePromise({ type });
@@ -361,6 +390,10 @@ class SharedRegistryWatcher {
         }
     }
     publishCurrent() {
+        if (!this.connected || !this.connection.connected) {
+            this.publish({ disconnected: true });
+            return;
+        }
         const subscriptionError = [...this.subscriptions.values()].find((state) => state.error)?.error;
         const error = subscriptionError ?? this.fetchError;
         if (error)
@@ -380,6 +413,8 @@ class SharedRegistryWatcher {
             return;
         this.stopped = true;
         this.generation += 1;
+        this.connection.removeEventListener("disconnected", this.handleDisconnected);
+        this.connection.removeEventListener("ready", this.handleReady);
         for (const subscription of this.subscriptions.values()) {
             subscription.unsubscribe?.();
             subscription.unsubscribe = undefined;
@@ -406,6 +441,7 @@ const en = {
     smoke: "Smoke",
     loading: "Loading Aegis devices…",
     error: "Unable to load registries",
+    disconnected: "Home Assistant disconnected. Waiting to reconnect…",
     retry: "Retry",
     empty: "No Aegis devices found",
     online: "online",
@@ -451,6 +487,7 @@ const nb = {
     smoke: "Røyk",
     loading: "Laster Aegis-enheter…",
     error: "Kunne ikke laste registre",
+    disconnected: "Home Assistant er frakoblet. Venter på ny tilkobling…",
     retry: "Prøv igjen",
     empty: "Fant ingen Aegis-enheter",
     online: "tilkoblet",
@@ -733,6 +770,8 @@ class AegisCardBase extends i {
         super(...arguments);
         this.deviceCard = false;
         this.registry = {};
+        // Invalidations outlive a reconnect, even when all readings return unchanged.
+        this.registryEpoch = 0;
     }
     t(key, count) {
         return localize(this.ha?.language, key, count);
@@ -768,6 +807,9 @@ class AegisCardBase extends i {
         super.disconnectedCallback();
         this.stop?.();
         this.stop = undefined;
+        this.registry = {};
+        this.registryEpoch += 1;
+        this.requestUpdate();
         clearInterval(this.timer);
         this.closeDialog();
     }
@@ -775,6 +817,8 @@ class AegisCardBase extends i {
         if (this.ha && !this.stop)
             this.stop = watchRegistries(this.ha, (value) => {
                 this.registry = value;
+                if (!value.snapshot)
+                    this.registryEpoch += 1;
                 this.requestUpdate();
             });
     }
@@ -890,15 +934,18 @@ class AegisCardBase extends i {
             .sort((a, b) => a.value - b.value);
         const disabledCount = devices.reduce((sum, device) => sum + device.disabledCount, 0);
         let previousArea;
+        const registryError = this.registry.disconnected
+            ? this.t("disconnected")
+            : this.registry.error
+                ? `${this.t("error")}: ${this.registry.error}`
+                : undefined;
         return b `<ha-card class=${this.config.appearance}
         ><h2>
           ${this.config.title ?? (this.deviceCard ? (devices[0]?.name ?? "Aegis") : "Aegis")}
         </h2>
-        ${this.registry.error
-            ? b `<p role="alert">
-                  ${this.t("error")}: ${this.registry.error}
-                </p>
-                <button @click=${this.retry}>${this.t("retry")}</button>`
+        ${registryError
+            ? b `<p role="alert">${registryError}</p>
+                ${this.registry.disconnected ? A : b `<button @click=${this.retry}>${this.t("retry")}</button>`}`
             : !this.registry.snapshot
                 ? b `<p role="status">${this.t("loading")}</p>`
                 : this.deviceCard && devices.length !== 1
@@ -1008,7 +1055,8 @@ class AegisActionCard extends AegisCardBase {
         if (!this.config?.allow_bypass ||
             !this.registry.snapshot ||
             this.registry.error ||
-            !this.isConnected)
+            !this.isConnected ||
+            !this.hass.connection.connected)
             return [];
         const devices = this.devices;
         if (this.deviceCard && devices.length !== 1)
@@ -1044,6 +1092,7 @@ class AegisActionCard extends AegisCardBase {
             targets,
             config: JSON.stringify(this.config),
             connection: this.hass.connection,
+            registryEpoch: this.registryEpoch,
         };
         this.feedback = "";
         this.requestUpdate();
@@ -1057,6 +1106,7 @@ class AegisActionCard extends AegisCardBase {
         ]));
         return (this.isConnected &&
             confirmation.connection === this.hass.connection &&
+            confirmation.registryEpoch === this.registryEpoch &&
             confirmation.config === JSON.stringify(this.config) &&
             this.config?.allow_bypass === true &&
             remaining.every((target) => JSON.stringify(target) ===
@@ -1275,7 +1325,7 @@ class AegisEditor extends i {
         this.registryFailed = false;
         this.requestUpdate();
         this.stopRegistry = watchRegistries(hass, (value) => {
-            this.registryFailed = Boolean(value.error);
+            this.registryFailed = Boolean(value.error || value.disconnected);
             this.deviceChoices = value.snapshot
                 ? this.choicesFromSnapshot(value.snapshot)
                 : [];
@@ -1490,6 +1540,10 @@ class AegisDeviceCardEditor extends AegisEditor {
     render() {
         const t = this.text;
         const value = String(this.config.device ?? "");
+        const nameCounts = new Map();
+        for (const device of this.deviceChoices ?? []) {
+            nameCounts.set(device.name, (nameCounts.get(device.name) ?? 0) + 1);
+        }
         const configuredName = value &&
             !this.deviceChoices?.some((device) => device.id === value) &&
             this.deviceChoices?.some((device) => device.name === value)
@@ -1508,10 +1562,10 @@ class AegisDeviceCardEditor extends AegisEditor {
               <option value="" ?selected=${!value}>${t.selectDevice}</option>
               ${configuredName
                 ? b `<option value=${configuredName} selected>
-                      ${configuredName}
+                      ${configuredName}${(nameCounts.get(configuredName) ?? 0) > 1 ? ` — ${t.selectDevice}` : ""}
                     </option>`
                 : A}
-              ${(this.deviceChoices ?? []).map((device) => b `<option value=${device.id} ?selected=${value === device.id}>${device.name}</option>`)}
+              ${(this.deviceChoices ?? []).map((device) => b `<option value=${device.id} ?selected=${value === device.id}>${device.name}${(nameCounts.get(device.name) ?? 0) > 1 ? ` (${device.id})` : ""}</option>`)}
             </select></label
           >
           <p class="help">${t.deviceHelp}</p>`;

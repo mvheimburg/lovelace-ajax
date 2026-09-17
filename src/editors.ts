@@ -116,7 +116,7 @@ abstract class AegisEditor extends LitElement {
     this.registryFailed = false;
     this.requestUpdate();
     this.stopRegistry = watchRegistries(hass, (value) => {
-      this.registryFailed = Boolean(value.error);
+      this.registryFailed = Boolean(value.error || value.disconnected);
       this.deviceChoices = value.snapshot
         ? this.choicesFromSnapshot(value.snapshot)
         : [];
@@ -341,6 +341,10 @@ export class AegisDeviceCardEditor extends AegisEditor {
   render() {
     const t = this.text;
     const value = String(this.config.device ?? "");
+    const nameCounts = new Map<string, number>();
+    for (const device of this.deviceChoices ?? []) {
+      nameCounts.set(device.name, (nameCounts.get(device.name) ?? 0) + 1);
+    }
     const configuredName =
       value &&
       !this.deviceChoices?.some((device) => device.id === value) &&
@@ -361,11 +365,11 @@ export class AegisDeviceCardEditor extends AegisEditor {
               ${
                 configuredName
                   ? html`<option value=${configuredName} selected>
-                      ${configuredName}
+                      ${configuredName}${(nameCounts.get(configuredName) ?? 0) > 1 ? ` — ${t.selectDevice}` : ""}
                     </option>`
                   : nothing
               }
-              ${(this.deviceChoices ?? []).map((device) => html`<option value=${device.id} ?selected=${value === device.id}>${device.name}</option>`)}
+              ${(this.deviceChoices ?? []).map((device) => html`<option value=${device.id} ?selected=${value === device.id}>${device.name}${(nameCounts.get(device.name) ?? 0) > 1 ? ` (${device.id})` : ""}</option>`)}
             </select></label
           >
           <p class="help">${t.deviceHelp}</p>`;

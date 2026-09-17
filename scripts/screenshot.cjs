@@ -91,6 +91,9 @@ const root = resolve(__dirname, "..");
         label_registry: "labels",
       };
       const connection = {
+        connected: true,
+        addEventListener() {},
+        removeEventListener() {},
         sendMessagePromise: async ({ type }) =>
           registry[keys[type.split("/")[1]]],
         subscribeEvents: async () => () => {},

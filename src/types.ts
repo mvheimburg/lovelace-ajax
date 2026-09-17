@@ -45,6 +45,12 @@ export interface RegistrySnapshot {
 }
 
 export interface HassConnection {
+  readonly connected: boolean;
+  addEventListener(type: "ready" | "disconnected", callback: () => void): void;
+  removeEventListener(
+    type: "ready" | "disconnected",
+    callback: () => void,
+  ): void;
   sendMessagePromise<T>(message: { type: string }): Promise<T>;
   subscribeEvents<T>(
     callback: (event: T) => void,
@@ -123,6 +129,7 @@ export interface DeviceHealth {
 }
 
 export interface RegistryWatchValue {
+  disconnected?: boolean;
   snapshot?: RegistrySnapshot;
   error?: string;
 }

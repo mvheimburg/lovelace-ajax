@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import { watchRegistries } from "../src/registry";
+import { watchRegistries, refreshRegistries } from "../src/registry";
+import { FixtureConnection } from "./card-fixtures";
 import { snapshot } from "./fixtures";
 import type { HassConnection, HomeAssistant, RegistryWatchValue } from "../src/types";
 
@@ -16,7 +17,7 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-class FakeConnection implements HassConnection {
+class FakeConnection extends FixtureConnection implements HassConnection {
   calls: string[] = [];
   subscribeCalls: string[] = [];
   listeners = new Map<string, (event: unknown) => void>();
@@ -25,6 +26,7 @@ class FakeConnection implements HassConnection {
   responder: (type: string) => Promise<unknown>;
 
   constructor(responder?: (type: string) => Promise<unknown>) {
+    super(structuredClone(snapshot));
     this.responder = responder ?? (async (type) => ({
       "config/entity_registry/list": snapshot.entities,
       "config/device_registry/list": snapshot.devices,
@@ -246,4 +248,171 @@ describe("watchRegistries", () => {
     expect(connection.unsubscribes).toHaveLength(4);
     expect(connection.unsubscribes.every((unsubscribe) => unsubscribe.mock.calls.length === 1)).toBe(true);
   });
+});
+
+describe("same-Connection transport lifecycle", () => {
+  test("refetches all registries on ready without duplicating restored subscriptions", async () => {
+    const connection = new FakeConnection();
+    const values: RegistryWatchValue[] = [];
+    const stop = watchRegistries(hassFor(connection), (value) =>
+      values.push(value),
+    );
+    await settle();
+    connection.lifecycle("disconnected");
+    await settle();
+    expect(values[values.length - 1]?.snapshot).toBeUndefined();
+    const changed = structuredClone(snapshot);
+    changed.devices[0].name_by_user = "Fresh workshop";
+    changed.entities = changed.entities.filter(
+      (entity) => entity.entity_id !== "binary_sensor.workshop_heat",
+    );
+    changed.entities[0].disabled_by = "user";
+    changed.areas[0].name = "Fresh area";
+    changed.labels[0].name = "Fresh label";
+    connection.responder = async (type) =>
+      ({
+        "config/entity_registry/list": changed.entities,
+        "config/device_registry/list": changed.devices,
+        "config/area_registry/list": changed.areas,
+        "config/label_registry/list": changed.labels,
+      })[type];
+    connection.lifecycle("ready");
+    await settle();
+    expect(values[values.length - 1]?.snapshot).toEqual(changed);
+    expect(connection.calls).toHaveLength(8);
+    expect(connection.subscribeCalls).toHaveLength(4);
+    stop();
+  });
+
+  test("cannot publish in-flight fetches or subscription completions after disconnect", async () => {
+    const devices = deferred<typeof snapshot.devices>();
+    const subscription = deferred<() => void>();
+    const connection = new FakeConnection();
+    connection.subscribeGates.push(subscription);
+    const values: RegistryWatchValue[] = [];
+    const hass = hassFor(connection);
+    const stop = watchRegistries(hass, (value) => values.push(value));
+    await settle();
+    const responder = connection.responder;
+    connection.responder = (type) =>
+      type === "config/device_registry/list"
+        ? devices.promise
+        : responder(type);
+    refreshRegistries(hass);
+    connection.lifecycle("disconnected");
+    const disconnectedAt = values.length;
+    devices.resolve(snapshot.devices);
+    subscription.resolve(() => {});
+    await settle();
+    expect(values[values.length - 1]?.snapshot).toBeUndefined();
+    expect(values.slice(disconnectedAt).some((value) => value.snapshot)).toBe(
+      false,
+    );
+    const calls = connection.calls.length;
+    refreshRegistries(hass);
+    await settle();
+    expect(connection.calls).toHaveLength(calls);
+    stop();
+  });
+
+  test("does not fetch or show a cached snapshot when first attached offline", async () => {
+    const connection = new FakeConnection();
+    connection.connected = false;
+    const values: RegistryWatchValue[] = [];
+    const stop = watchRegistries(hassFor(connection), (value) =>
+      values.push(value),
+    );
+    await settle();
+    expect(connection.calls).toHaveLength(0);
+    expect(values[values.length - 1]?.snapshot).toBeUndefined();
+    connection.lifecycle("ready");
+    await settle();
+    expect(values[values.length - 1]?.snapshot?.devices).toEqual(
+      snapshot.devices,
+    );
+    stop();
+  });
+
+  test("ready retries failed subscriptions while retaining pending and restored subscriptions", async () => {
+    const failed = deferred<() => void>();
+    const pending = deferred<() => void>();
+    const connection = new FakeConnection();
+    connection.subscribeGates.push(failed, pending);
+    const values: RegistryWatchValue[] = [];
+    const stop = watchRegistries(hassFor(connection), (value) =>
+      values.push(value),
+    );
+    failed.reject(new Error("Subscription denied"));
+    await settle();
+    connection.lifecycle("disconnected");
+    connection.lifecycle("ready");
+    await settle();
+    pending.resolve(() => {});
+    await settle();
+    expect(
+      connection.subscribeCalls.filter(
+        (type) => type === "entity_registry_updated",
+      ),
+    ).toHaveLength(2);
+    expect(
+      connection.subscribeCalls.filter(
+        (type) => type === "device_registry_updated",
+      ),
+    ).toHaveLength(1);
+    expect(connection.subscribeCalls).toHaveLength(5);
+    expect(values[values.length - 1]?.snapshot?.devices).toEqual(
+      snapshot.devices,
+    );
+    stop();
+  });
+
+  test("shares lifecycle listeners and removes them only when the final subscriber detaches", async () => {
+    const connection = new FakeConnection();
+    const stopFirst = watchRegistries(hassFor(connection), () => {});
+    const stopSecond = watchRegistries(hassFor(connection), () => {});
+    await settle();
+    expect(connection.lifecycleListeners.get("ready")?.size).toBe(1);
+    expect(connection.lifecycleListeners.get("disconnected")?.size).toBe(1);
+    stopFirst();
+    expect(connection.lifecycleListeners.get("ready")?.size).toBe(1);
+    stopSecond();
+    expect(connection.lifecycleListeners.get("ready")?.size).toBe(0);
+    expect(connection.lifecycleListeners.get("disconnected")?.size).toBe(0);
+    const calls = connection.calls.length;
+    connection.lifecycle("ready");
+    await settle();
+    expect(connection.calls).toHaveLength(calls);
+  });
+});
+
+test("keeps ready loading until fresh fetch completes despite delayed pre-disconnect work", async () => {
+  const connection = new FakeConnection();
+  const subscription = deferred<() => void>();
+  connection.subscribeGates.push(subscription);
+  const values: RegistryWatchValue[] = [];
+  const hass = hassFor(connection);
+  const stop = watchRegistries(hass, (value) => values.push(value));
+  await settle();
+  const stale = deferred<typeof snapshot.devices>();
+  const fresh = deferred<typeof snapshot.devices>();
+  const responder = connection.responder;
+  connection.responder = (type) =>
+    type === "config/device_registry/list" ? stale.promise : responder(type);
+  refreshRegistries(hass);
+  connection.lifecycle("disconnected");
+  connection.responder = (type) =>
+    type === "config/device_registry/list" ? fresh.promise : responder(type);
+  connection.lifecycle("ready");
+  stale.resolve(snapshot.devices);
+  subscription.resolve(() => {});
+  await settle();
+  expect(values[values.length - 1]?.snapshot).toBeUndefined();
+  expect(values[values.length - 1]?.disconnected).not.toBe(true);
+  fresh.resolve([{ ...snapshot.devices[0], name_by_user: "Fresh workshop" }]);
+  await settle();
+  expect(values[values.length - 1]?.snapshot?.devices[0].name_by_user).toBe(
+    "Fresh workshop",
+  );
+  expect(connection.subscribeCalls).toHaveLength(4);
+  stop();
 });

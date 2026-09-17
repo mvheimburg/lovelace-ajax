@@ -340,3 +340,119 @@ it.each(["unavailable", "on"])(
     expect(root.textContent).toContain("scope changed");
   },
 );
+
+it.each([false, true])(
+  "rejects a confirmation spanning disconnect even after identical data returns (reconnected=%s)",
+  async (reconnected) => {
+    const hass = fixture();
+    const calls: unknown[][] = [];
+    hass.callService = async (...args) => {
+      calls.push(args);
+    };
+    const card = new AegisPanelCard();
+    card.setConfig({ allow_bypass: true });
+    card.hass = hass;
+    document.body.append(card);
+    await settle();
+    const root = card.shadowRoot!;
+    click(root, "[data-bypass]");
+    await settle();
+    hass.connection.lifecycle("disconnected");
+    if (reconnected) hass.connection.lifecycle("ready");
+    await settle();
+    click(root, "[data-confirm]");
+    await settle();
+    expect(calls).toEqual([]);
+    expect(root.textContent).toContain("scope changed");
+    if (reconnected) {
+      click(root, "[data-bypass]");
+      await settle();
+      click(root, "[data-confirm]");
+      await settle();
+      expect(calls).toEqual([
+        ["switch", "turn_on", { entity_id: "switch.workshop_bypass" }],
+      ]);
+    }
+  },
+);
+
+it("stops unprocessed bulk targets when a disconnect and ready occur during a pending call", async () => {
+  const registry = structuredClone((await import("./fixtures")).snapshot);
+  registry.entities.push({
+    entity_id: "switch.second_bypass",
+    platform: "aegis_ajax",
+    device_id: "ajax-workshop",
+    unique_id: "second",
+    labels: [],
+  });
+  const hass = fixture(registry);
+  hass.states["switch.second_bypass"] = {
+    entity_id: "switch.second_bypass",
+    state: "off",
+    attributes: {},
+  };
+  const calls: unknown[][] = [];
+  let release!: () => void;
+  hass.callService = async (...args) => {
+    calls.push(args);
+    if (calls.length === 1)
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+  };
+  const card = new AegisPanelCard();
+  card.setConfig({ allow_bypass: true });
+  card.hass = hass;
+  document.body.append(card);
+  await settle();
+  const root = card.shadowRoot!;
+  click(root, "[data-bypass]");
+  await settle();
+  click(root, "[data-confirm]");
+  await settle();
+  hass.connection.lifecycle("disconnected");
+  hass.connection.lifecycle("ready");
+  await settle();
+  release();
+  await settle();
+  expect(calls).toEqual([
+    ["switch", "turn_on", { entity_id: "switch.workshop_bypass" }],
+  ]);
+  expect(root.textContent).toContain("scope changed");
+});
+
+it("requires fresh confirmation after detaching across a transport disconnect", async () => {
+  const hass = fixture();
+  const calls: unknown[][] = [];
+  hass.callService = async (...args) => {
+    calls.push(args);
+  };
+  const card = new AegisPanelCard();
+  card.setConfig({ allow_bypass: true });
+  card.hass = hass;
+  document.body.append(card);
+  await settle();
+  const root = card.shadowRoot!;
+  click(root, "[data-bypass]");
+  await settle();
+  card.remove();
+  hass.connection.lifecycle("disconnected");
+  hass.connection.lifecycle("ready");
+  const send = hass.connection.sendMessagePromise.bind(hass.connection);
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  hass.connection.sendMessagePromise = async (message) => {
+    await gate;
+    return send(message);
+  };
+  document.body.append(card);
+  await settle();
+  expect(root.querySelector("[data-bypass]")).toBeNull();
+  release();
+  await settle();
+  click(root, "[data-confirm]");
+  await settle();
+  expect(calls).toEqual([]);
+});

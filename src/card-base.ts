@@ -18,6 +18,8 @@ export class AegisCardBase extends LitElement {
   protected config?: CardConfig;
   private ha?: HomeAssistant;
   protected registry: RegistryWatchValue = {};
+  // Invalidations outlive a reconnect, even when all readings return unchanged.
+  protected registryEpoch = 0;
   private stop?: () => void;
   private timer?: ReturnType<typeof setInterval>;
   private detailId?: string;
@@ -54,6 +56,9 @@ export class AegisCardBase extends LitElement {
     super.disconnectedCallback();
     this.stop?.();
     this.stop = undefined;
+    this.registry = {};
+    this.registryEpoch += 1;
+    this.requestUpdate();
     clearInterval(this.timer);
     this.closeDialog();
   }
@@ -61,6 +66,7 @@ export class AegisCardBase extends LitElement {
     if (this.ha && !this.stop)
       this.stop = watchRegistries(this.ha, (value) => {
         this.registry = value;
+        if (!value.snapshot) this.registryEpoch += 1;
         this.requestUpdate();
       });
   }
@@ -189,16 +195,19 @@ export class AegisCardBase extends LitElement {
       0,
     );
     let previousArea: string | undefined;
+    const registryError = this.registry.disconnected
+      ? this.t("disconnected")
+      : this.registry.error
+        ? `${this.t("error")}: ${this.registry.error}`
+        : undefined;
     return html`<ha-card class=${this.config.appearance}
         ><h2>
           ${this.config.title ?? (this.deviceCard ? (devices[0]?.name ?? "Aegis") : "Aegis")}
         </h2>
         ${
-          this.registry.error
-            ? html`<p role="alert">
-                  ${this.t("error")}: ${this.registry.error}
-                </p>
-                <button @click=${this.retry}>${this.t("retry")}</button>`
+          registryError
+            ? html`<p role="alert">${registryError}</p>
+                ${this.registry.disconnected ? nothing : html`<button @click=${this.retry}>${this.t("retry")}</button>`}`
             : !this.registry.snapshot
               ? html`<p role="status">${this.t("loading")}</p>`
               : this.deviceCard && devices.length !== 1

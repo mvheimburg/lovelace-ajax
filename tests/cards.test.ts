@@ -323,3 +323,55 @@ it("retains separate headings for distinct area IDs with the same display name",
     ),
   ).toEqual(["Workshop area", "Workshop area"]);
 });
+
+it("removes healthy readings while disconnected and discovers changed membership on same-object ready", async () => {
+  const hass = fixture();
+  const card = await mount({ allow_bypass: true }, false, hass);
+  hass.connection.lifecycle("disconnected");
+  await settle();
+  expect(card.shadowRoot!.querySelector(".summary")).toBeNull();
+  expect(card.shadowRoot!.querySelector("[data-device]")).toBeNull();
+  expect(card.shadowRoot!.querySelector("[data-bypass]")).toBeNull();
+  expect(
+    card.shadowRoot!.querySelector('[role="alert"]')?.textContent,
+  ).toContain("disconnected");
+  const registry = hass.connection.registry;
+  registry.devices[0].name_by_user = "Fresh workshop";
+  registry.entities.find(
+    (entity) => entity.entity_id === "sensor.workshop_probe",
+  )!.disabled_by = "user";
+  registry.entities = registry.entities.filter(
+    (entity) => entity.entity_id !== "binary_sensor.workshop_heat",
+  );
+  registry.devices.push({ id: "new-alarm", name: "New detector" });
+  registry.entities.push({
+    entity_id: "binary_sensor.new_smoke",
+    platform: "aegis_ajax",
+    device_id: "new-alarm",
+    unique_id: "new",
+  });
+  hass.states["binary_sensor.new_smoke"] = {
+    entity_id: "binary_sensor.new_smoke",
+    state: "on",
+    attributes: { device_class: "smoke" },
+  };
+  hass.connection.lifecycle("ready");
+  await settle();
+  expect(card.shadowRoot!.querySelector("[data-alarm]")?.textContent).toContain(
+    "New detector",
+  );
+  hass.states["binary_sensor.new_smoke"].state = "off";
+  card.hass = { ...hass };
+  await settle();
+  expect(card.shadowRoot!.textContent).toContain("Fresh workshop");
+  expect(card.shadowRoot!.textContent).not.toContain("19.2");
+  expect(card.shadowRoot!.querySelectorAll("[data-device]")).toHaveLength(2);
+  click(card.shadowRoot!, '[data-device="ajax-workshop"]');
+  await settle();
+  expect(card.shadowRoot!.querySelector("#details")?.textContent).not.toContain(
+    "binary_sensor.workshop_heat",
+  );
+  expect(
+    card.shadowRoot!.querySelector(".disabled-notice")?.textContent,
+  ).toContain("2");
+});
