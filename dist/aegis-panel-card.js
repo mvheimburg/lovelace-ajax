@@ -1490,6 +1490,11 @@ class AegisDeviceCardEditor extends AegisEditor {
     render() {
         const t = this.text;
         const value = String(this.config.device ?? "");
+        const configuredName = value &&
+            !this.deviceChoices?.some((device) => device.id === value) &&
+            this.deviceChoices?.some((device) => device.name === value)
+            ? value
+            : undefined;
         const deviceField = this.registryFailed
             ? b `<label
             >${t.device}<input
@@ -1501,6 +1506,11 @@ class AegisDeviceCardEditor extends AegisEditor {
             : b `<label
             >${t.device}<select name="device" @change=${this.changed}>
               <option value="" ?selected=${!value}>${t.selectDevice}</option>
+              ${configuredName
+                ? b `<option value=${configuredName} selected>
+                      ${configuredName}
+                    </option>`
+                : A}
               ${(this.deviceChoices ?? []).map((device) => b `<option value=${device.id} ?selected=${value === device.id}>${device.name}</option>`)}
             </select></label
           >

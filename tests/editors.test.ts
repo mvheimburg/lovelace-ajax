@@ -109,7 +109,7 @@ describe("Aegis visual editors", () => {
     const editor = document.createElement("aegis-device-card-editor") as Editor;
     editor.setConfig({
       type: "custom:aegis-device-card",
-      device: "ajax-workshop",
+      device: "Workshop",
     });
     editor.hass = hass;
     document.body.append(editor);
@@ -124,10 +124,46 @@ describe("Aegis visual editors", () => {
 
     const select =
       editor.shadowRoot!.querySelector<HTMLSelectElement>('[name="device"]')!;
-    expect(select.value).toBe("ajax-workshop");
-    expect(Array.from(select.options).map((option) => option.text)).toContain(
-      "Workshop",
+    expect(select.value).toBe("Workshop");
+    expect(Array.from(select.options).map((option) => option.value)).toContain(
+      "ajax-workshop",
     );
+    expect(
+      await change(editor, '[name="title"]', "Workshop safety"),
+    ).toMatchObject({
+      device: "Workshop",
+      title: "Workshop safety",
+    });
+    expect(
+      await change(editor, '[name="device"]', "ajax-workshop"),
+    ).toMatchObject({ device: "ajax-workshop" });
+  });
+
+  it("keeps an ambiguous configured name distinct from stable ID choices", async () => {
+    const registry = structuredClone(snapshot);
+    registry.devices.push({
+      ...registry.devices[0],
+      id: "ajax-workshop-copy",
+    });
+    registry.entities.push({
+      ...registry.entities[0],
+      entity_id: "binary_sensor.workshop_copy_smoke",
+      device_id: "ajax-workshop-copy",
+    });
+    const editor = await mount(
+      "aegis-device-card-editor",
+      { type: "custom:aegis-device-card", device: "Workshop" },
+      fixture(registry),
+    );
+    const select =
+      editor.shadowRoot!.querySelector<HTMLSelectElement>('[name="device"]')!;
+    expect(select.value).toBe("Workshop");
+    expect(Array.from(select.options).map((option) => option.value)).toEqual([
+      "",
+      "Workshop",
+      "ajax-workshop",
+      "ajax-workshop-copy",
+    ]);
   });
 
   it("accepts a blank device stub, falls back to text, localizes labels, and rejects invalid thresholds", async () => {
