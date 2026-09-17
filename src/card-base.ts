@@ -243,7 +243,7 @@ export class AegisCardBase extends LitElement {
                                     ·
                                     ${seconds === undefined ? this.t("unknown") : `${Math.floor(seconds / 60)}m ${seconds % 60}s`}
                                     ${this.t("elapsed")}
-                                  </button></section>`;
+                                  </button>`;
                                 },
                               )}
                               ${devices.filter((device) => this.health(device).alarm.length).map((device) => html`<button data-device=${device.id} @click=${() => this.details(device)}>${this.t("details")}: ${device.name}</button>`)}
@@ -256,8 +256,8 @@ export class AegisCardBase extends LitElement {
                         const heading =
                           !this.deviceCard &&
                           panel.group_by === "area" &&
-                          previousArea !== area;
-                        previousArea = area;
+                          previousArea !== (device.area?.id ?? "");
+                        previousArea = device.area?.id ?? "";
                         return html`<section
                           ?data-device-group=${panel.group_by === "device"}
                           class=${panel.group_by === "device" ? "device-group" : ""}

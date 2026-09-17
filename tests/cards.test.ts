@@ -301,3 +301,25 @@ it("preserves the lowest battery reading unit in the system summary", async () =
     "44mV",
   );
 });
+it("retains separate headings for distinct area IDs with the same display name", async () => {
+  const registry = structuredClone(snapshot);
+  registry.areas.push({ area_id: "second-area", name: "Workshop area" });
+  registry.devices.push({
+    id: "second",
+    name: "Second detector",
+    area_id: "second-area",
+  });
+  registry.entities.push({
+    entity_id: "binary_sensor.second_smoke",
+    platform: "aegis_ajax",
+    device_id: "second",
+    unique_id: "second",
+    labels: [],
+  });
+  const card = await mount({}, false, fixture(registry));
+  expect(
+    Array.from(card.shadowRoot!.querySelectorAll("ha-card h3")).map(
+      (heading) => heading.textContent,
+    ),
+  ).toEqual(["Workshop area", "Workshop area"]);
+});

@@ -934,7 +934,7 @@ class AegisCardBase extends i {
                                     ·
                                     ${seconds === undefined ? this.t("unknown") : `${Math.floor(seconds / 60)}m ${seconds % 60}s`}
                                     ${this.t("elapsed")}
-                                  </button></section>`;
+                                  </button>`;
                             })}
                               ${devices.filter((device) => this.health(device).alarm.length).map((device) => b `<button data-device=${device.id} @click=${() => this.details(device)}>${this.t("details")}: ${device.name}</button>`)}
                             </section>`
@@ -944,8 +944,8 @@ class AegisCardBase extends i {
                             const area = device.area?.name ?? this.t("noArea");
                             const heading = !this.deviceCard &&
                                 panel.group_by === "area" &&
-                                previousArea !== area;
-                            previousArea = area;
+                                previousArea !== (device.area?.id ?? "");
+                            previousArea = device.area?.id ?? "";
                             return b `<section
                           ?data-device-group=${panel.group_by === "device"}
                           class=${panel.group_by === "device" ? "device-group" : ""}
@@ -1050,12 +1050,17 @@ class AegisActionCard extends AegisCardBase {
         await this.updateComplete;
         this.shadowRoot.querySelector("#confirmation").showModal();
     }
-    valid(confirmation) {
+    valid(confirmation, remaining = confirmation.targets) {
+        const current = new Map(this.targets(confirmation.deviceId).map((target) => [
+            target.entityId,
+            target,
+        ]));
         return (this.isConnected &&
             confirmation.connection === this.hass.connection &&
             confirmation.config === JSON.stringify(this.config) &&
-            JSON.stringify(confirmation.targets) ===
-                JSON.stringify(this.targets(confirmation.deviceId)));
+            this.config?.allow_bypass === true &&
+            remaining.every((target) => JSON.stringify(target) ===
+                JSON.stringify(current.get(target.entityId))));
     }
     cancel() {
         if (this.pending)
@@ -1077,8 +1082,10 @@ class AegisActionCard extends AegisCardBase {
         this.pending = true;
         this.requestUpdate();
         const failures = [];
-        for (const target of confirmation.targets) {
-            if (!this.valid(confirmation)) {
+        for (const [index, target] of confirmation.targets.entries()) {
+            // Completed calls may already have published new HA state. Only the
+            // unprocessed confirmed targets must still match their captured readings.
+            if (!this.valid(confirmation, confirmation.targets.slice(index))) {
                 failures.push(this.t("changed"));
                 break;
             }

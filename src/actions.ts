@@ -69,13 +69,23 @@ export class AegisActionCard extends AegisCardBase {
       "#confirmation",
     )!.showModal();
   }
-  private valid(confirmation: Confirmation) {
+  private valid(confirmation: Confirmation, remaining = confirmation.targets) {
+    const current = new Map(
+      this.targets(confirmation.deviceId).map((target) => [
+        target.entityId,
+        target,
+      ]),
+    );
     return (
       this.isConnected &&
       confirmation.connection === this.hass.connection &&
       confirmation.config === JSON.stringify(this.config) &&
-      JSON.stringify(confirmation.targets) ===
-        JSON.stringify(this.targets(confirmation.deviceId))
+      this.config?.allow_bypass === true &&
+      remaining.every(
+        (target) =>
+          JSON.stringify(target) ===
+          JSON.stringify(current.get(target.entityId)),
+      )
     );
   }
   private cancel() {
@@ -96,8 +106,10 @@ export class AegisActionCard extends AegisCardBase {
     this.pending = true;
     this.requestUpdate();
     const failures: string[] = [];
-    for (const target of confirmation.targets) {
-      if (!this.valid(confirmation)) {
+    for (const [index, target] of confirmation.targets.entries()) {
+      // Completed calls may already have published new HA state. Only the
+      // unprocessed confirmed targets must still match their captured readings.
+      if (!this.valid(confirmation, confirmation.targets.slice(index))) {
         failures.push(this.t("changed"));
         break;
       }
