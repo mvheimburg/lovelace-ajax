@@ -16,7 +16,7 @@ const t$1=globalThis,e$2=t$1.ShadowRoot&&(void 0===t$1.ShadyCSS||t$1.ShadyCSS.na
  * Copyright 2017 Google LLC
  * SPDX-License-Identifier: BSD-3-Clause
  */
-const t=globalThis,i$1=t=>t,s$1=t.trustedTypes,e=s$1?s$1.createPolicy("lit-html",{createHTML:t=>t}):void 0,h="$lit$",o$1=`lit$${Math.random().toFixed(9).slice(2)}$`,n="?"+o$1,r=`<${n}>`,l=document,c=()=>l.createComment(""),a=t=>null===t||"object"!=typeof t&&"function"!=typeof t,u=Array.isArray,d=t=>u(t)||"function"==typeof t?.[Symbol.iterator],f="[ \t\n\f\r]",v=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,_=/-->/g,m=/>/g,p=RegExp(`>|${f}(?:([^\\s"'>=/]+)(${f}*=${f}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),g=/'/g,$=/"/g,y=/^(?:script|style|textarea|title)$/i,x=t=>(i,...s)=>({_$litType$:t,strings:i,values:s}),b=x(1),E=Symbol.for("lit-noChange"),A=Symbol.for("lit-nothing"),C=new WeakMap,P=l.createTreeWalker(l,129);function V(t,i){if(!u(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==e?e.createHTML(i):i}const N=(t,i)=>{const s=t.length-1,e=[];let n,l=2===i?"<svg>":3===i?"<math>":"",c=v;for(let i=0;i<s;i++){const s=t[i];let a,u,d=-1,f=0;for(;f<s.length&&(c.lastIndex=f,u=c.exec(s),null!==u);)f=c.lastIndex,c===v?"!--"===u[1]?c=_:void 0!==u[1]?c=m:void 0!==u[2]?(y.test(u[2])&&(n=RegExp("</"+u[2],"g")),c=p):void 0!==u[3]&&(c=p):c===p?">"===u[0]?(c=n??v,d=-1):void 0===u[1]?d=-2:(d=c.lastIndex-u[2].length,a=u[1],c=void 0===u[3]?p:'"'===u[3]?$:g):c===$||c===g?c=p:c===_||c===m?c=v:(c=p,n=void 0);const x=c===p&&t[i+1].startsWith("/>")?" ":"";l+=c===v?s+r:d>=0?(e.push(a),s.slice(0,d)+h+s.slice(d)+o$1+x):s+o$1+(-2===d?i:x);}return [V(t,l+(t[s]||"<?>")+(2===i?"</svg>":3===i?"</math>":"")),e]};class S{constructor({strings:t,_$litType$:i},e){let r;this.parts=[];let l=0,a=0;const u=t.length-1,d=this.parts,[f,v]=N(t,i);if(this.el=S.createElement(f,e),P.currentNode=this.el.content,2===i||3===i){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes);}for(;null!==(r=P.nextNode())&&d.length<u;){if(1===r.nodeType){if(r.hasAttributes())for(const t of r.getAttributeNames())if(t.endsWith(h)){const i=v[a++],s=r.getAttribute(t).split(o$1),e=/([.?@])?(.*)/.exec(i);d.push({type:1,index:l,name:e[2],strings:s,ctor:"."===e[1]?I:"?"===e[1]?L:"@"===e[1]?z:H}),r.removeAttribute(t);}else t.startsWith(o$1)&&(d.push({type:6,index:l}),r.removeAttribute(t));if(y.test(r.tagName)){const t=r.textContent.split(o$1),i=t.length-1;if(i>0){r.textContent=s$1?s$1.emptyScript:"";for(let s=0;s<i;s++)r.append(t[s],c()),P.nextNode(),d.push({type:2,index:++l});r.append(t[i],c());}}}else if(8===r.nodeType)if(r.data===n)d.push({type:2,index:l});else {let t=-1;for(;-1!==(t=r.data.indexOf(o$1,t+1));)d.push({type:7,index:l}),t+=o$1.length-1;}l++;}}static createElement(t,i){const s=l.createElement("template");return s.innerHTML=t,s}}function M(t,i,s=t,e){if(i===E)return i;let h=void 0!==e?s._$Co?.[e]:s._$Cl;const o=a(i)?void 0:i._$litDirective$;return h?.constructor!==o&&(h?._$AO?.(false),void 0===o?h=void 0:(h=new o(t),h._$AT(t,s,e)),void 0!==e?(s._$Co??=[])[e]=h:s._$Cl=h),void 0!==h&&(i=M(t,h._$AS(t,i.values),h,e)),i}class R{constructor(t,i){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=i;}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:i},parts:s}=this._$AD,e=(t?.creationScope??l).importNode(i,true);P.currentNode=e;let h=P.nextNode(),o=0,n=0,r=s[0];for(;void 0!==r;){if(o===r.index){let i;2===r.type?i=new k(h,h.nextSibling,this,t):1===r.type?i=new r.ctor(h,r.name,r.strings,this,t):6===r.type&&(i=new Z(h,this,t)),this._$AV.push(i),r=s[++n];}o!==r?.index&&(h=P.nextNode(),o++);}return P.currentNode=l,e}p(t){let i=0;for(const s of this._$AV) void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,i),i+=s.strings.length-2):s._$AI(t[i])),i++;}}class k{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,i,s,e){this.type=2,this._$AH=A,this._$AN=void 0,this._$AA=t,this._$AB=i,this._$AM=s,this.options=e,this._$Cv=e?.isConnected??true;}get parentNode(){let t=this._$AA.parentNode;const i=this._$AM;return void 0!==i&&11===t?.nodeType&&(t=i.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,i=this){t=M(this,t,i),a(t)?t===A||null==t||""===t?(this._$AH!==A&&this._$AR(),this._$AH=A):t!==this._$AH&&t!==E&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):d(t)?this.k(t):this._(t);}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t));}_(t){this._$AH!==A&&a(this._$AH)?this._$AA.nextSibling.data=t:this.T(l.createTextNode(t)),this._$AH=t;}$(t){const{values:i,_$litType$:s}=t,e="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=S.createElement(V(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===e)this._$AH.p(i);else {const t=new R(e,this),s=t.u(this.options);t.p(i),this.T(s),this._$AH=t;}}_$AC(t){let i=C.get(t.strings);return void 0===i&&C.set(t.strings,i=new S(t)),i}k(t){u(this._$AH)||(this._$AH=[],this._$AR());const i=this._$AH;let s,e=0;for(const h of t)e===i.length?i.push(s=new k(this.O(c()),this.O(c()),this,this.options)):s=i[e],s._$AI(h),e++;e<i.length&&(this._$AR(s&&s._$AB.nextSibling,e),i.length=e);}_$AR(t=this._$AA.nextSibling,s){for(this._$AP?.(false,true,s);t!==this._$AB;){const s=i$1(t).nextSibling;i$1(t).remove(),t=s;}}setConnected(t){ void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t));}}class H{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,i,s,e,h){this.type=1,this._$AH=A,this._$AN=void 0,this.element=t,this.name=i,this._$AM=e,this.options=h,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=A;}_$AI(t,i=this,s,e){const h=this.strings;let o=false;if(void 0===h)t=M(this,t,i,0),o=!a(t)||t!==this._$AH&&t!==E,o&&(this._$AH=t);else {const e=t;let n,r;for(t=h[0],n=0;n<h.length-1;n++)r=M(this,e[s+n],i,n),r===E&&(r=this._$AH[n]),o||=!a(r)||r!==this._$AH[n],r===A?t=A:t!==A&&(t+=(r??"")+h[n+1]),this._$AH[n]=r;}o&&!e&&this.j(t);}j(t){t===A?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"");}}class I extends H{constructor(){super(...arguments),this.type=3;}j(t){this.element[this.name]=t===A?void 0:t;}}class L extends H{constructor(){super(...arguments),this.type=4;}j(t){this.element.toggleAttribute(this.name,!!t&&t!==A);}}class z extends H{constructor(t,i,s,e,h){super(t,i,s,e,h),this.type=5;}_$AI(t,i=this){if((t=M(this,t,i,0)??A)===E)return;const s=this._$AH,e=t===A&&s!==A||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,h=t!==A&&(s===A||e);e&&this.element.removeEventListener(this.name,this,s),h&&this.element.addEventListener(this.name,this,t),this._$AH=t;}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t);}}class Z{constructor(t,i,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=i,this.options=s;}get _$AU(){return this._$AM._$AU}_$AI(t){M(this,t);}}const B=t.litHtmlPolyfillSupport;B?.(S,k),(t.litHtmlVersions??=[]).push("3.3.3");const D=(t,i,s)=>{const e=s?.renderBefore??i;let h=e._$litPart$;if(void 0===h){const t=s?.renderBefore??null;e._$litPart$=h=new k(i.insertBefore(c(),t),t,void 0,s??{});}return h._$AI(t),h};
+const t=globalThis,i$1=t=>t,s$1=t.trustedTypes,e=s$1?s$1.createPolicy("lit-html",{createHTML:t=>t}):void 0,h="$lit$",o$1=`lit$${Math.random().toFixed(9).slice(2)}$`,n="?"+o$1,r=`<${n}>`,l=document,c=()=>l.createComment(""),a=t=>null===t||"object"!=typeof t&&"function"!=typeof t,u=Array.isArray,d=t=>u(t)||"function"==typeof t?.[Symbol.iterator],f="[ \t\n\f\r]",v=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,_=/-->/g,m=/>/g,p=RegExp(`>|${f}(?:([^\\s"'>=/]+)(${f}*=${f}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,"g"),g=/'/g,$=/"/g,y=/^(?:script|style|textarea|title)$/i,x=t=>(i,...s)=>({_$litType$:t,strings:i,values:s}),b=x(1),w=x(2),E=Symbol.for("lit-noChange"),A=Symbol.for("lit-nothing"),C=new WeakMap,P=l.createTreeWalker(l,129);function V(t,i){if(!u(t)||!t.hasOwnProperty("raw"))throw Error("invalid template strings array");return void 0!==e?e.createHTML(i):i}const N=(t,i)=>{const s=t.length-1,e=[];let n,l=2===i?"<svg>":3===i?"<math>":"",c=v;for(let i=0;i<s;i++){const s=t[i];let a,u,d=-1,f=0;for(;f<s.length&&(c.lastIndex=f,u=c.exec(s),null!==u);)f=c.lastIndex,c===v?"!--"===u[1]?c=_:void 0!==u[1]?c=m:void 0!==u[2]?(y.test(u[2])&&(n=RegExp("</"+u[2],"g")),c=p):void 0!==u[3]&&(c=p):c===p?">"===u[0]?(c=n??v,d=-1):void 0===u[1]?d=-2:(d=c.lastIndex-u[2].length,a=u[1],c=void 0===u[3]?p:'"'===u[3]?$:g):c===$||c===g?c=p:c===_||c===m?c=v:(c=p,n=void 0);const x=c===p&&t[i+1].startsWith("/>")?" ":"";l+=c===v?s+r:d>=0?(e.push(a),s.slice(0,d)+h+s.slice(d)+o$1+x):s+o$1+(-2===d?i:x);}return [V(t,l+(t[s]||"<?>")+(2===i?"</svg>":3===i?"</math>":"")),e]};class S{constructor({strings:t,_$litType$:i},e){let r;this.parts=[];let l=0,a=0;const u=t.length-1,d=this.parts,[f,v]=N(t,i);if(this.el=S.createElement(f,e),P.currentNode=this.el.content,2===i||3===i){const t=this.el.content.firstChild;t.replaceWith(...t.childNodes);}for(;null!==(r=P.nextNode())&&d.length<u;){if(1===r.nodeType){if(r.hasAttributes())for(const t of r.getAttributeNames())if(t.endsWith(h)){const i=v[a++],s=r.getAttribute(t).split(o$1),e=/([.?@])?(.*)/.exec(i);d.push({type:1,index:l,name:e[2],strings:s,ctor:"."===e[1]?I:"?"===e[1]?L:"@"===e[1]?z:H}),r.removeAttribute(t);}else t.startsWith(o$1)&&(d.push({type:6,index:l}),r.removeAttribute(t));if(y.test(r.tagName)){const t=r.textContent.split(o$1),i=t.length-1;if(i>0){r.textContent=s$1?s$1.emptyScript:"";for(let s=0;s<i;s++)r.append(t[s],c()),P.nextNode(),d.push({type:2,index:++l});r.append(t[i],c());}}}else if(8===r.nodeType)if(r.data===n)d.push({type:2,index:l});else {let t=-1;for(;-1!==(t=r.data.indexOf(o$1,t+1));)d.push({type:7,index:l}),t+=o$1.length-1;}l++;}}static createElement(t,i){const s=l.createElement("template");return s.innerHTML=t,s}}function M(t,i,s=t,e){if(i===E)return i;let h=void 0!==e?s._$Co?.[e]:s._$Cl;const o=a(i)?void 0:i._$litDirective$;return h?.constructor!==o&&(h?._$AO?.(false),void 0===o?h=void 0:(h=new o(t),h._$AT(t,s,e)),void 0!==e?(s._$Co??=[])[e]=h:s._$Cl=h),void 0!==h&&(i=M(t,h._$AS(t,i.values),h,e)),i}class R{constructor(t,i){this._$AV=[],this._$AN=void 0,this._$AD=t,this._$AM=i;}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(t){const{el:{content:i},parts:s}=this._$AD,e=(t?.creationScope??l).importNode(i,true);P.currentNode=e;let h=P.nextNode(),o=0,n=0,r=s[0];for(;void 0!==r;){if(o===r.index){let i;2===r.type?i=new k(h,h.nextSibling,this,t):1===r.type?i=new r.ctor(h,r.name,r.strings,this,t):6===r.type&&(i=new Z(h,this,t)),this._$AV.push(i),r=s[++n];}o!==r?.index&&(h=P.nextNode(),o++);}return P.currentNode=l,e}p(t){let i=0;for(const s of this._$AV) void 0!==s&&(void 0!==s.strings?(s._$AI(t,s,i),i+=s.strings.length-2):s._$AI(t[i])),i++;}}class k{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(t,i,s,e){this.type=2,this._$AH=A,this._$AN=void 0,this._$AA=t,this._$AB=i,this._$AM=s,this.options=e,this._$Cv=e?.isConnected??true;}get parentNode(){let t=this._$AA.parentNode;const i=this._$AM;return void 0!==i&&11===t?.nodeType&&(t=i.parentNode),t}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(t,i=this){t=M(this,t,i),a(t)?t===A||null==t||""===t?(this._$AH!==A&&this._$AR(),this._$AH=A):t!==this._$AH&&t!==E&&this._(t):void 0!==t._$litType$?this.$(t):void 0!==t.nodeType?this.T(t):d(t)?this.k(t):this._(t);}O(t){return this._$AA.parentNode.insertBefore(t,this._$AB)}T(t){this._$AH!==t&&(this._$AR(),this._$AH=this.O(t));}_(t){this._$AH!==A&&a(this._$AH)?this._$AA.nextSibling.data=t:this.T(l.createTextNode(t)),this._$AH=t;}$(t){const{values:i,_$litType$:s}=t,e="number"==typeof s?this._$AC(t):(void 0===s.el&&(s.el=S.createElement(V(s.h,s.h[0]),this.options)),s);if(this._$AH?._$AD===e)this._$AH.p(i);else {const t=new R(e,this),s=t.u(this.options);t.p(i),this.T(s),this._$AH=t;}}_$AC(t){let i=C.get(t.strings);return void 0===i&&C.set(t.strings,i=new S(t)),i}k(t){u(this._$AH)||(this._$AH=[],this._$AR());const i=this._$AH;let s,e=0;for(const h of t)e===i.length?i.push(s=new k(this.O(c()),this.O(c()),this,this.options)):s=i[e],s._$AI(h),e++;e<i.length&&(this._$AR(s&&s._$AB.nextSibling,e),i.length=e);}_$AR(t=this._$AA.nextSibling,s){for(this._$AP?.(false,true,s);t!==this._$AB;){const s=i$1(t).nextSibling;i$1(t).remove(),t=s;}}setConnected(t){ void 0===this._$AM&&(this._$Cv=t,this._$AP?.(t));}}class H{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(t,i,s,e,h){this.type=1,this._$AH=A,this._$AN=void 0,this.element=t,this.name=i,this._$AM=e,this.options=h,s.length>2||""!==s[0]||""!==s[1]?(this._$AH=Array(s.length-1).fill(new String),this.strings=s):this._$AH=A;}_$AI(t,i=this,s,e){const h=this.strings;let o=false;if(void 0===h)t=M(this,t,i,0),o=!a(t)||t!==this._$AH&&t!==E,o&&(this._$AH=t);else {const e=t;let n,r;for(t=h[0],n=0;n<h.length-1;n++)r=M(this,e[s+n],i,n),r===E&&(r=this._$AH[n]),o||=!a(r)||r!==this._$AH[n],r===A?t=A:t!==A&&(t+=(r??"")+h[n+1]),this._$AH[n]=r;}o&&!e&&this.j(t);}j(t){t===A?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,t??"");}}class I extends H{constructor(){super(...arguments),this.type=3;}j(t){this.element[this.name]=t===A?void 0:t;}}class L extends H{constructor(){super(...arguments),this.type=4;}j(t){this.element.toggleAttribute(this.name,!!t&&t!==A);}}class z extends H{constructor(t,i,s,e,h){super(t,i,s,e,h),this.type=5;}_$AI(t,i=this){if((t=M(this,t,i,0)??A)===E)return;const s=this._$AH,e=t===A&&s!==A||t.capture!==s.capture||t.once!==s.once||t.passive!==s.passive,h=t!==A&&(s===A||e);e&&this.element.removeEventListener(this.name,this,s),h&&this.element.addEventListener(this.name,this,t),this._$AH=t;}handleEvent(t){"function"==typeof this._$AH?this._$AH.call(this.options?.host??this.element,t):this._$AH.handleEvent(t);}}class Z{constructor(t,i,s){this.element=t,this.type=6,this._$AN=void 0,this._$AM=i,this.options=s;}get _$AU(){return this._$AM._$AU}_$AI(t){M(this,t);}}const B=t.litHtmlPolyfillSupport;B?.(S,k),(t.litHtmlVersions??=[]).push("3.3.3");const D=(t,i,s)=>{const e=s?.renderBefore??i;let h=e._$litPart$;if(void 0===h){const t=s?.renderBefore??null;e._$litPart$=h=new k(i.insertBefore(c(),t),t,void 0,s??{});}return h._$AI(t),h};
 
 /**
  * @license
@@ -495,6 +495,18 @@ const en = {
     deactivation: "Deactivation kinds",
     caution: "Bypass may deactivate tamper only or the whole device, depending on integration settings.",
     selection: "Selected devices",
+    bypassed: "Bypassed",
+    statusOk: "OK",
+    lowestBattery: "lowest battery",
+    noContact: "No contact for",
+    detectedFor: "Detected for",
+    triggered: "Triggered",
+    intact: "Intact",
+    tamperOnly: "Only tamper alerts are off. Smoke and heat are still reported.",
+    wholeDevice: "The whole device is bypassed and will not report.",
+    offlineNote: "Cannot report fire while offline.",
+    more: "More",
+    attention: "needs attention",
 };
 const nb = {
     on: "På",
@@ -543,6 +555,18 @@ const nb = {
     deactivation: "Deaktiveringstyper",
     caution: "Forbikobling kan deaktivere bare sabotasje eller hele enheten, avhengig av integrasjonens innstillinger.",
     selection: "Valgte enheter",
+    bypassed: "Forbikoblet",
+    statusOk: "I orden",
+    lowestBattery: "lavest batteri",
+    noContact: "Ingen kontakt på",
+    detectedFor: "Oppdaget for",
+    triggered: "Utløst",
+    intact: "Intakt",
+    tamperOnly: "Bare sabotasjevarsel er slått av. Røyk og varme varsles fortsatt.",
+    wholeDevice: "Hele enheten er forbikoblet og varsler ikke.",
+    offlineNote: "Kan ikke varsle brann mens den er frakoblet.",
+    more: "Mer",
+    attention: "trenger tilsyn",
 };
 function localize(language, key, count) {
     const norwegian = /^(nb|no|nn)(-|$)/.test((language ?? "").replace(/_/g, "-").toLowerCase());
@@ -558,169 +582,340 @@ function localize(language, key, count) {
 const styles = i$3 `
   :host {
     display: block;
-    color: var(--primary-text-color, #242c38);
+    color: var(--primary-text-color, #1b1b1a);
     font-family: var(--paper-font-body1_-_font-family, system-ui);
+    --aegis-text: var(--primary-text-color, #1b1b1a);
+    --aegis-muted: var(--secondary-text-color, #5b5a55);
+    --aegis-ok: var(--success-color, #2e7d32);
+    --aegis-warn: var(--warning-color, #f59e0b);
+    --aegis-offline: var(--orange-color, #ea580c);
+    --aegis-alarm: var(--error-color, #c62828);
+    --aegis-neutral: var(--disabled-text-color, #8a8984);
   }
   * {
     box-sizing: border-box;
   }
   ha-card {
-    display: block;
-    padding: 20px;
-    background: var(--ha-card-background, var(--card-background-color, #fff));
+    --aegis-surface: var(
+      --ha-card-background,
+      var(--card-background-color, #fff)
+    );
+    --aegis-pill: var(--secondary-background-color, #f3f2ee);
+    --aegis-pill-radius: 20px;
+    --aegis-tile-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    container-type: inline-size;
+    background: var(--aegis-surface);
     border: var(--ha-card-border-width, 1px) solid
-      var(--ha-card-border-color, #ddd);
+      var(--ha-card-border-color, var(--divider-color, #e0e0e0));
     border-radius: var(--ha-card-border-radius, 16px);
     box-shadow: var(--ha-card-box-shadow);
   }
-  .bubble {
-    background: var(
+  ha-card.bubble {
+    --aegis-surface: var(
       --bubble-main-background-color,
-      var(--ha-card-background, #fff)
+      var(--ha-card-background, var(--card-background-color, #fff))
     );
+    --aegis-pill: var(
+      --bubble-secondary-background-color,
+      var(--secondary-background-color, #f3f2ee)
+    );
+    --aegis-pill-radius: var(--bubble-border-radius, 32px);
+    --aegis-tile-radius: var(--bubble-sub-button-border-radius, 22px);
     border: var(--bubble-border, none);
     border-radius: var(--bubble-border-radius, 32px);
     box-shadow: var(--bubble-box-shadow, var(--ha-card-box-shadow));
   }
-  .bubble .device {
-    background: var(
-      --bubble-secondary-background-color,
-      var(--secondary-background-color, #f3f5f8)
-    );
-    border-radius: var(--bubble-sub-button-border-radius, 20px);
+  .sev-ok {
+    --sev: var(--aegis-ok);
   }
-  .bubble .symbol {
-    background: var(--bubble-icon-background-color, #e6eaf0);
-    border-radius: var(--bubble-icon-border-radius, 50%);
-    color: var(--bubble-accent-color, var(--primary-color, #03a9f4));
+  .sev-attention,
+  .sev-battery {
+    --sev: var(--aegis-warn);
   }
-  .bubble .actions button {
-    background: var(
-      --bubble-sub-button-background-color,
-      var(--secondary-background-color, #eef1f5)
-    );
-    border-radius: var(--bubble-sub-button-border-radius, 18px);
+  .sev-offline {
+    --sev: var(--aegis-offline);
+  }
+  .sev-alarm {
+    --sev: var(--aegis-alarm);
+  }
+  .sev-unknown {
+    --sev: var(--aegis-neutral);
   }
   h2 {
-    font-size: 1.25rem;
-    margin: 0 0 8px;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 4px;
   }
   h3 {
-    font-size: 1rem;
-    margin: 18px 0 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--aegis-muted);
+    margin: 4px 8px 8px;
   }
   p {
     line-height: 1.5;
+    margin: 0;
   }
   .summary {
-    color: var(--secondary-text-color, #526071);
-    font-size: 0.9rem;
-    line-height: 1.65;
-    margin-bottom: 16px;
-  }
-  .device {
-    width: 100%;
-    text-align: left;
     display: flex;
-    gap: 12px;
-    align-items: center;
-    margin: 8px 0;
-    padding: 14px;
-    background: var(--secondary-background-color, #f6f7fa);
-    border: 1px solid transparent;
-    border-radius: 12px;
-    color: inherit;
+    flex-direction: column;
+    gap: 10px;
   }
-  .symbol {
-    flex: 0 0 40px;
-    height: 40px;
+  .overview {
+    color: var(--aegis-muted);
+    font-size: 0.9rem;
+    margin: -6px 4px 0;
+  }
+  .tiles {
     display: grid;
-    place-items: center;
-    background: #e6eaf0;
-    border-radius: 50%;
-    font-size: 1.3rem;
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    gap: 6px;
   }
-  .device strong {
-    display: block;
-  }
-  .device > span:last-child {
+  .tile {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    border-radius: var(--aegis-tile-radius);
+    background: var(--aegis-pill);
     min-width: 0;
   }
-  .readings {
-    font-size: 0.85rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    line-height: 1.6;
-    margin-top: 4px;
+  .tile[class*="sev-"]:not(.sev-ok) {
+    background: color-mix(in srgb, var(--sev) 16%, var(--aegis-pill));
   }
-  .chip {
-    border-radius: 999px;
-    padding: 2px 8px;
-    background: var(--card-background-color, #fff);
-    border: 1px solid var(--divider-color, #d8dce2);
+  .summary .tile .value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+  .summary .tile.sev-ok .value,
+  .summary .tile.sev-offline .value {
+    color: color-mix(in srgb, var(--sev) 70%, var(--aegis-text));
+  }
+  .tile .label {
+    font-size: 0.78rem;
+    color: var(--aegis-muted);
+  }
+  .device-card .tile .value {
+    font-size: 1.05rem;
+    font-weight: 700;
     overflow-wrap: anywhere;
   }
-  .alarm-chip {
-    color: #a51414;
-    background: #fff0f0;
-    border-color: #d44848;
+  .group {
+    display: flex;
+    flex-direction: column;
   }
-  .attention-chip {
-    color: #7a4300;
-    background: #fff3d9;
-    border-color: #c68a25;
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
-  .device-group {
-    border: 1px solid var(--divider-color, #d8dce2);
-    border-radius: 16px;
-    padding: 8px;
-    margin: 12px 0;
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    border-radius: var(--aegis-pill-radius);
+    background: var(--aegis-pill);
   }
-  .device-group .device {
-    margin: 0;
+  .row.wide {
+    grid-column: 1 / -1;
+  }
+  .row.sev-offline,
+  .row.sev-alarm {
+    background: color-mix(in srgb, var(--sev) 16%, var(--aegis-pill));
+  }
+  .pill {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 60px;
+    padding: 6px 12px 6px 6px;
+    text-align: left;
+    border: 0;
+    border-radius: var(--aegis-pill-radius);
+    background: none;
+  }
+  .icon {
+    flex: 0 0 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--bubble-icon-border-radius, 50%);
+    color: color-mix(in srgb, var(--sev) 75%, var(--aegis-text));
+    background: color-mix(in srgb, var(--sev) 20%, transparent);
+  }
+  .icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  .text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+  }
+  .text strong {
+    font-size: 0.98rem;
+    overflow-wrap: anywhere;
+  }
+  .sub {
+    font-size: 0.83rem;
+    color: var(--aegis-muted);
+    line-height: 1.4;
+  }
+  .chip {
+    overflow-wrap: anywhere;
+  }
+  .alarm-chip,
+  .attention-chip,
+  .offline-chip {
+    font-weight: 700;
+    color: var(--aegis-text);
+  }
+  .row-action {
+    flex: 0 0 auto;
+    margin-right: 6px;
+    border-radius: var(--aegis-pill-radius);
+    background: color-mix(in srgb, var(--aegis-warn) 30%, var(--aegis-surface));
+    font-weight: 700;
+  }
+  .device-group .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .status {
+    flex: 0 0 auto;
+    display: inline-block;
+    padding: 6px 11px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--sev) 22%, transparent);
+    color: color-mix(in srgb, var(--sev) 60%, var(--aegis-text));
+  }
+  .status::first-letter {
+    text-transform: uppercase;
+  }
+  .head .pill {
+    min-height: 64px;
+  }
+  .head .icon {
+    flex-basis: 52px;
+    height: 52px;
+  }
+  .hero {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 4px 8px 0;
+  }
+  .hero .label {
+    font-size: 0.8rem;
+    color: var(--aegis-muted);
+  }
+  .hero .big {
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .hero.sev-offline .big {
+    font-size: 2rem;
+    color: color-mix(in srgb, var(--sev) 70%, var(--aegis-text));
+  }
+  .note {
+    font-size: 0.88rem;
+    padding: 12px 14px;
+    border-radius: var(--aegis-tile-radius);
+    background: color-mix(in srgb, var(--sev) 16%, var(--aegis-pill));
   }
   .disabled-notice {
     font-size: 0.8rem;
-  }
-  .alarm {
-    border-left: 5px solid var(--error-color, #c62828) !important;
-  }
-  .tamper {
-    border-left: 5px solid var(--warning-color, #b36a00) !important;
+    margin: 0 4px;
   }
   .takeover {
-    background: var(--error-color, #ba1a1a);
-    color: white;
-    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--aegis-alarm);
+    color: #fff;
+    border-radius: var(--aegis-pill-radius);
     padding: 16px;
-    margin: 12px 0;
+  }
+  .takeover-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.4rem;
+    font-weight: 800;
+  }
+  .takeover .icon {
+    color: var(--aegis-alarm);
+    background: #fff;
   }
   .takeover button {
-    overflow-wrap: anywhere;
-    white-space: normal;
     color: inherit;
-    text-align: left;
-    background: transparent;
-    border: 1px solid currentColor;
+    background: rgb(0 0 0 / 0.2);
+    border: 1px solid rgb(255 255 255 / 0.45);
+  }
+  .alarm-source {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     width: 100%;
-    margin-top: 8px;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    border-radius: var(--aegis-tile-radius);
+  }
+  .timer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .timer small {
+    font-size: 0.7rem;
+    font-weight: 500;
   }
   .actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
+  }
+  .actions button {
+    flex: 1 1 auto;
+  }
+  .actions button.primary {
+    font-weight: 700;
+    background: color-mix(in srgb, var(--aegis-warn) 35%, var(--aegis-surface));
   }
   button {
     font: inherit;
     cursor: pointer;
-    border: 1px solid var(--divider-color, #aab1bc);
-    border-radius: 10px;
-    padding: 10px 14px;
+    border: 0;
+    border-radius: 999px;
+    padding: 10px 16px;
     color: inherit;
-    background: var(--card-background-color, #fff);
+    background: var(--aegis-pill, var(--secondary-background-color, #f3f2ee));
     min-height: 44px;
+  }
+  .pill:hover,
+  .entity:hover {
+    background: color-mix(in srgb, var(--aegis-text) 5%, transparent);
   }
   button:disabled {
     opacity: 0.55;
@@ -729,21 +924,33 @@ const styles = i$3 `
   button:focus-visible,
   a:focus-visible {
     outline: 3px solid var(--primary-color, #0277bd);
-    outline-offset: 3px;
+    outline-offset: 2px;
   }
   a {
     color: var(--primary-color, #0277bd);
   }
   dialog {
-    color: var(--primary-text-color, #242c38);
+    color: var(--primary-text-color, #1b1b1a);
     background: var(--card-background-color, #fff);
-    border: 1px solid var(--divider-color, #ddd);
-    border-radius: 18px;
+    border: 0;
+    border-radius: 24px;
     padding: 24px;
-    width: min(560px, calc(100vw - 24px));
+    width: min(520px, calc(100vw - 24px));
     max-height: 85dvh;
     overflow: auto;
     box-shadow: 0 16px 60px #0006;
+  }
+  dialog h2 {
+    margin: 0 0 8px;
+  }
+  dialog h3 {
+    margin: 16px 4px 6px;
+  }
+  dialog p {
+    margin: 8px 0;
+  }
+  dialog .actions {
+    margin-top: 16px;
   }
   dialog::backdrop {
     background: #0007;
@@ -753,34 +960,72 @@ const styles = i$3 `
     justify-content: space-between;
     gap: 12px;
     width: 100%;
-    margin: 6px 0;
+    margin: 4px 0;
     text-align: left;
+    border-radius: 14px;
+    background: var(--secondary-background-color, #f3f2ee);
     overflow-wrap: anywhere;
   }
   .feedback {
-    padding: 10px;
-    background: var(--secondary-background-color, #eef1f5);
-    border-radius: 8px;
+    padding: 10px 14px;
+    background: var(--aegis-pill, var(--secondary-background-color, #f3f2ee));
+    border-radius: 14px;
     overflow-wrap: anywhere;
   }
   .muted {
-    color: var(--secondary-text-color, #526071);
+    color: var(--aegis-muted);
+  }
+  @container (max-width: 340px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .row.wide {
+      flex-wrap: wrap;
+    }
+    .row-action {
+      margin: 0 6px 6px auto;
+    }
   }
   @media (max-width: 400px) {
     ha-card {
-      padding: 14px;
-    }
-    .device {
-      padding: 10px;
-    }
-    .actions button {
-      flex: 1;
+      padding: 12px;
     }
     dialog {
       padding: 16px;
     }
   }
 `;
+
+const paths = {
+    ok: w `<circle cx="12" cy="12" r="9"></circle>
+    <circle cx="12" cy="12" r="4"></circle>
+    <path d="M12 3v2M12 19v2M3 12h2M19 12h2"></path>`,
+    alarm: w `<path
+    d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5.3 1.5 1 2.5 2 3 0-3 0-5.5 1-8.5z"
+  ></path>`,
+    attention: w `<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path>
+    <path d="M12 8v4M12 16h.01"></path>`,
+    offline: w `<path
+      d="M2 8.5a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 15.5a5 5 0 0 1 6 0"
+    ></path>
+    <path d="M3 3l18 18"></path>`,
+    battery: w `<rect x="3" y="7" width="16" height="10" rx="2"></rect>
+    <path d="M22 11v2M7 10v4"></path>`,
+    unknown: w `<circle cx="12" cy="12" r="9"></circle>
+    <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.2M12 17h.01"></path>`,
+};
+/** Stroke icons in currentColor; decorative, the status text carries meaning. */
+const icon = (severity) => b `<svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    ${paths[severity]}
+  </svg>`;
 
 class AegisCardBase extends i {
     constructor() {
@@ -888,30 +1133,333 @@ class AegisCardBase extends i {
             ? this.t("unknown")
             : state.state === "unavailable"
                 ? this.t("offline")
-                : `${state.state === "on" || state.state === "off" ? this.t(state.state) : state.state.trim() && Number.isFinite(Number(state.state)) ? this.number(Number(state.state)) : state.state} ${state.attributes.unit_of_measurement ?? ""}`.trim();
+                : `${state.state === "on" || state.state === "off" ? this.t(state.state) : state.state.trim() && Number.isFinite(Number(state.state)) ? this.number(Number(state.state)) : state.state}\u00a0${state.attributes.unit_of_measurement ?? ""}`.trim();
     }
-    badges(device, health) {
-        const active = [
-            "alarm",
-            "tamper",
-            "problem",
-            "lowBattery",
-            "bypassed",
-            "update",
+    severity(h) {
+        if (h.alarm.length)
+            return "alarm";
+        if (h.problem.length || h.tamper.length || h.bypassed.length)
+            return "attention";
+        if (h.online === "offline")
+            return "offline";
+        if (h.lowBattery.length)
+            return "battery";
+        // Stray unknown readings (e.g. a never-pressed button) stay a chip only.
+        if (h.online === "unknown")
+            return "unknown";
+        return "ok";
+    }
+    statusLabel(h, severity) {
+        if (severity === "attention")
+            return this.t(h.tamper.length ? "tamper" : h.problem.length ? "problem" : "bypassed");
+        const keys = {
+            alarm: "alarm",
+            offline: "offline",
+            battery: "lowBattery",
+            unknown: "unknown",
+            ok: "statusOk",
+        };
+        return this.t(keys[severity]);
+    }
+    /** Readings worth showing; unavailable ones are covered by the offline status. */
+    live(entities) {
+        return entities.filter((e) => this.ha?.states[e.entityId]?.state !== "unavailable");
+    }
+    batteryText(device, h) {
+        const batteries = this.live(device.entities.battery);
+        if (!batteries.length)
+            return undefined;
+        return h.minBattery?.value !== undefined
+            ? `${this.number(h.minBattery.value)}${h.minBattery.unit ?? "%"}`
+            : batteries.map((e) => this.reading(e.entityId)).join(", ");
+    }
+    lower(text) {
+        return text.toLocaleLowerCase(language(this.ha));
+    }
+    /** Localized "3 h 12 min"; Intl unit names keep this out of the dictionaries. */
+    duration(ms) {
+        const unit = (value, name) => new Intl.NumberFormat(language(this.ha), {
+            style: "unit",
+            unit: name,
+            unitDisplay: "short",
+        }).format(value);
+        const minutes = Math.max(0, Math.floor(ms / 60000));
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        if (days)
+            return `${unit(days, "day")} ${unit(hours % 24, "hour")}`;
+        if (hours)
+            return `${unit(hours, "hour")} ${unit(minutes % 60, "minute")}`;
+        return unit(minutes, "minute");
+    }
+    elapsed(since) {
+        const start = Date.parse(since ?? "");
+        if (!Number.isFinite(start))
+            return this.t("unknown");
+        const seconds = Math.max(0, Math.floor((Date.now() - start) / 1000));
+        const pad = (value) => String(value).padStart(2, "0");
+        const hours = Math.floor(seconds / 3600);
+        const rest = `${pad(Math.floor((seconds % 3600) / 60))}:${pad(seconds % 60)}`;
+        return hours
+            ? `${hours}:${rest}`
+            : `${Math.floor(seconds / 60)}:${pad(seconds % 60)}`;
+    }
+    /** Reasons first, then context and readings, as one wrapping line. */
+    segments(device, h, wide) {
+        const out = [];
+        const reasons = [
+            ["alarm", "alarm", "alarm-chip"],
+            ["tamper", "tamper", "attention-chip"],
+            ["problem", "problem", "attention-chip"],
+            ["bypassed", "bypassed", "attention-chip"],
+            ["lowBattery", "lowBattery", "attention-chip"],
+            ["update", "update", ""],
+        ];
+        for (const [key, message, kind] of reasons)
+            if (h[key].length)
+                out.push({ label: this.t(message), kind });
+        if (h.online !== "online")
+            out.push({
+                label: this.t(h.online),
+                kind: h.online === "offline" ? "offline-chip" : "",
+            });
+        if (h.unknown.length)
+            out.push({ label: `${h.unknown.length} ${this.t("unknown")}` });
+        if (this.config.group_by !== "area" && !this.deviceCard)
+            out.push({ label: device.area?.name ?? this.t("noArea") });
+        const battery = this.batteryText(device, h);
+        if (battery)
+            out.push({ label: `${this.t("battery")} ${battery}` });
+        if (wide)
+            for (const e of this.live(device.entities.signal))
+                out.push({ label: `${this.t("signal")} ${this.reading(e.entityId)}` });
+        if (this.config?.show_temperature)
+            for (const e of this.live(device.entities.temperature))
+                out.push({ label: this.reading(e.entityId) });
+        if (out[0])
+            out[0].label =
+                out[0].label.charAt(0).toLocaleUpperCase(language(this.ha)) +
+                    out[0].label.slice(1);
+        return out;
+    }
+    renderSegments(segments) {
+        return segments.map((segment, index) => b `${index ? " · " : ""}<span class="chip ${segment.kind ?? ""}"
+            >${segment.label}</span
+          >`);
+    }
+    renderRowAction(_device, _health) {
+        return A;
+    }
+    renderRow(device, h) {
+        const severity = this.severity(h);
+        const wide = severity !== "ok" || this.config.group_by === "device";
+        return b `<div class="row sev-${severity} ${wide ? "wide" : ""}">
+      <button
+        data-device=${device.id}
+        class="pill"
+        @click=${() => this.details(device)}
+      >
+        <span class="icon">${icon(severity)}</span
+        ><span class="text"
+          ><strong>${device.name}</strong
+          ><span class="sub readings"
+            >${this.renderSegments(this.segments(device, h, wide))}</span
+          ></span
+        >
+      </button>
+      ${this.renderRowAction(device, h)}
+    </div>`;
+    }
+    renderList(sorted, health) {
+        const panel = this.config;
+        const rows = (devices) => b `<div class="grid">
+        ${devices.map((device) => this.renderRow(device, health(device)))}
+      </div>`;
+        if (panel.group_by === "device")
+            return sorted.map((device) => b `<section data-device-group class="device-group">
+            ${rows([device])}
+          </section>`);
+        if (panel.group_by !== "area")
+            return rows(sorted);
+        const groups = new Map();
+        for (const device of sorted) {
+            const key = device.area?.id ?? "";
+            const group = groups.get(key) ?? {
+                name: device.area?.name ?? this.t("noArea"),
+                devices: [],
+            };
+            group.devices.push(device);
+            groups.set(key, group);
+        }
+        return [...groups.values()].map((group) => b `<section class="group">
+          <h3>${group.name}</h3>
+          ${rows(group.devices)}
+        </section>`);
+    }
+    renderSummary(devices, health) {
+        const count = (predicate) => devices.filter((device) => predicate(health(device))).length;
+        const online = count((h) => h.online === "online");
+        const offline = count((h) => h.online === "offline");
+        const unknown = count((h) => h.online === "unknown");
+        const battery = devices
+            .map((d) => health(d).minBattery)
+            .filter((v) => v?.value !== undefined)
+            .sort((a, b) => a.value - b.value)[0];
+        const issues = [
+            [(h) => h.tamper.length > 0, "tamper"],
+            [(h) => h.problem.length > 0, "problem"],
+            [(h) => h.bypassed.length > 0, "bypassed"],
+            [(h) => h.lowBattery.length > 0, "lowBattery"],
+            [(h) => h.update.length > 0, "update"],
         ]
-            .filter((key) => health[key].length)
-            .map((key) => this.t(key === "bypassed" ? "bypass" : key));
-        if (health.unknown.length)
-            active.push(`${health.unknown.length} ${this.t("unknown")}`);
-        if (!active.length && health.online === "online")
-            active.push(this.t("clear"));
-        const chip = (label, value, kind = "") => b `<span class="chip ${kind}"
-        >${label}${value !== undefined ? `: ${value}` : ""}</span
-      >`;
-        return b `${chip(this.t(health.online))}${active.map((label) => chip(label, undefined, label === this.t("alarm") ? "alarm-chip" : label === this.t("tamper") || label === this.t("bypass") ? "attention-chip" : ""))}
-    ${device.entities.battery.length ? chip(this.t("battery"), health.minBattery?.value !== undefined ? `${this.number(health.minBattery.value)}${health.minBattery.unit ?? "%"}` : device.entities.battery.map((e) => this.reading(e.entityId)).join(", ")) : A}
-    ${device.entities.signal.map((e) => chip(this.t("signal"), this.reading(e.entityId)))}
-    ${this.config?.show_temperature ? device.entities.temperature.map((e) => chip(this.t("temperature"), this.reading(e.entityId))) : A}`;
+            .map(([predicate, key]) => [count(predicate), key])
+            .filter(([n]) => n > 0)
+            .map(([n, key]) => `${n} ${this.lower(this.t(key))}`);
+        const overview = [
+            `${devices.length} ${this.t("devices", devices.length)}`,
+            ...issues,
+        ];
+        if (!issues.length && !offline && !unknown)
+            overview.push(this.t("clear"));
+        const tile = (value, label, severity = "") => b `<div class="tile ${severity}">
+        <span class="value">${value}</span> <span class="label">${label}</span>
+      </div>`;
+        return b `<div class="summary">
+      <p class="overview">${overview.join(" · ")}</p>
+      <div class="tiles">
+        ${tile(this.number(online), this.t("online"), "sev-ok")}
+        ${tile(this.number(offline), this.t("offline"), offline ? "sev-offline" : "")}
+        ${unknown ? tile(this.number(unknown), this.t("unknown"), "sev-unknown") : A}
+        ${battery
+            ? tile(`${this.number(battery.value)}${battery.unit ?? ""}`, this.t("lowestBattery"), battery.value < this.config.battery_warning
+                ? "sev-battery"
+                : "")
+            : A}
+      </div>
+    </div>`;
+    }
+    renderTakeover(devices, alarms, health) {
+        return b `<section class="takeover" aria-label=${this.t("alarm")}>
+      <div class="takeover-head">
+        <span class="icon">${icon("alarm")}</span
+        ><strong>${this.t("alarm")}</strong>
+      </div>
+      ${alarms.map(({ device, alarm }) => b `<button
+            data-alarm
+            class="alarm-source"
+            @click=${() => this.moreInfo(alarm.entityId)}
+          >
+            <span class="text"
+              ><strong>${device.name}</strong
+              ><span
+                >${device.area?.name ?? this.t("noArea")} ·
+                ${alarm.state?.attributes.friendly_name ??
+            alarm.registry.name ??
+            (alarm.state?.attributes.device_class === "heat"
+                ? this.t("heat")
+                : this.t("smoke"))}</span
+              ></span
+            ><span class="timer"
+              ><small>${this.t("detectedFor")}</small
+              >${this.elapsed(alarm.state?.last_changed)}</span
+            >
+          </button>`)}
+      <div class="actions">
+        ${devices
+            .filter((device) => health(device).alarm.length)
+            .map((device) => b `<button
+                data-device=${device.id}
+                @click=${() => this.details(device)}
+              >
+                ${this.t("details")}: ${device.name}
+              </button>`)}
+      </div>
+    </section>`;
+    }
+    renderDevice(device, h) {
+        const severity = this.severity(h);
+        const states = this.ha.states;
+        const temperatures = this.config.show_temperature
+            ? this.live(device.entities.temperature)
+            : [];
+        const lost = device.entities.connectivity
+            .map((entity) => states[entity.entityId])
+            .find((state) => state?.state === "off" || state?.state === "unavailable");
+        const since = Date.parse(lost?.last_changed ?? "");
+        const offlineHero = h.online === "offline" && Number.isFinite(since);
+        const kinds = h.bypassed.flatMap((bypass) => bypass.deactivationKinds);
+        const bypassNote = !h.bypassed.length
+            ? undefined
+            : h.bypassed.some((bypass) => bypass.wholeDevice)
+                ? this.t("wholeDevice")
+                : kinds.length && kinds.every((kind) => kind.includes("tamper"))
+                    ? this.t("tamperOnly")
+                    : this.t("caution");
+        const tamperEntities = this.live(device.entities.tamper);
+        const tamper = tamperEntities.map((e) => states[e.entityId]);
+        const tamperValue = tamper.some((state) => state?.state === "on")
+            ? this.t("triggered")
+            : tamper.every((state) => state?.state === "off")
+                ? this.t("intact")
+                : this.reading(tamperEntities[tamper.findIndex((state) => state?.state !== "off")]
+                    .entityId);
+        const battery = this.batteryText(device, h);
+        const tile = (label, value, severity = "") => b `<div class="tile ${severity}">
+        <span class="label">${label}</span> <span class="value">${value}</span>
+      </div>`;
+        const note = (text, severity) => b `<p class="note ${severity}">${text}</p>`;
+        return b `<div class="row head sev-${severity}">
+        <button
+          data-device=${device.id}
+          class="pill"
+          aria-label="${device.name}: ${this.t("details")}"
+          @click=${() => this.details(device)}
+        >
+          <span class="icon">${icon(severity)}</span
+          ><span class="text"
+            ><strong>${device.name}</strong
+            ><span class="sub"
+              >${device.area?.name ?? this.t("noArea")}</span
+            ></span
+          ><span class="status">${this.statusLabel(h, severity)}</span>
+        </button>
+      </div>
+      ${offlineHero
+            ? b `<div class="hero sev-offline">
+              <span class="label">${this.t("noContact")}</span>
+              <span class="big">${this.duration(Date.now() - since)}</span>
+            </div>`
+            : temperatures.length
+                ? b `<div class="hero">
+                <span class="label">${this.t("temperature")}</span>
+                <span class="big"
+                  >${this.reading(temperatures[0].entityId)}</span
+                >
+              </div>`
+                : A}
+      ${h.online === "offline" && device.entities.alarm.length
+            ? note(this.t("offlineNote"), "sev-offline")
+            : A}
+      ${bypassNote ? note(bypassNote, "sev-attention") : A}
+      <div class="tiles">
+        ${battery
+            ? tile(this.t("battery"), battery, h.lowBattery.length ? "sev-battery" : "")
+            : A}
+        ${this.live(device.entities.signal).map((e) => tile(this.t("signal"), this.reading(e.entityId)))}
+        ${tamper.length
+            ? tile(this.t("tamper"), tamperValue, h.tamper.length ? "sev-attention" : "")
+            : A}
+        ${h.problem.length
+            ? tile(this.t("problem"), this.t("triggered"), "sev-attention")
+            : A}
+        ${h.update.length ? tile(this.t("update"), this.t("on")) : A}
+        ${temperatures
+            .slice(offlineHero ? 0 : 1)
+            .map((e) => tile(this.t("temperature"), this.reading(e.entityId)))}
+        ${h.unknown.length
+            ? tile(this.t("unknown"), this.number(h.unknown.length), "sev-unknown")
+            : A}
+      </div>`;
     }
     rank(h) {
         return h.alarm.length
@@ -937,34 +1485,23 @@ class AegisCardBase extends i {
         if (!this.config)
             return A;
         const devices = this.devices;
-        let sorted = [...devices].sort((a, b) => this.rank(this.health(a)) - this.rank(this.health(b)) ||
+        const healths = new Map(devices.map((d) => [d.id, this.health(d)]));
+        const health = (device) => healths.get(device.id);
+        const sorted = [...devices].sort((a, b) => this.rank(health(a)) - this.rank(health(b)) ||
             a.name.localeCompare(b.name));
-        const alarms = devices.flatMap((device) => this.health(device).alarm.map((alarm) => ({ device, alarm })));
+        const alarms = devices.flatMap((device) => health(device).alarm.map((alarm) => ({ device, alarm })));
         const detail = devices.find((d) => d.id === this.detailId);
         const panel = this.config;
-        if (!this.deviceCard && panel.group_by === "area") {
-            const groups = new Map();
-            for (const device of sorted) {
-                const key = device.area?.id ?? "";
-                groups.set(key, [...(groups.get(key) ?? []), device]);
-            }
-            sorted = [...groups.values()].flat();
-        }
-        const battery = devices
-            .map((d) => this.health(d).minBattery)
-            .filter((v) => v?.value !== undefined)
-            .sort((a, b) => a.value - b.value);
         const disabledCount = devices.reduce((sum, device) => sum + device.disabledCount, 0);
-        let previousArea;
         const registryError = this.registry.disconnected
             ? this.t("disconnected")
             : this.registry.error
                 ? `${this.t("error")}: ${this.registry.error}`
                 : undefined;
-        return b `<ha-card class=${this.config.appearance}
-        ><h2>
-          ${this.config.title ?? (this.deviceCard ? (devices[0]?.name ?? "Aegis") : "Aegis")}
-        </h2>
+        const title = this.config.title ?? (this.deviceCard ? undefined : "Aegis");
+        return b `<ha-card
+        class="${this.config.appearance} ${this.deviceCard ? "device-card" : "panel-card"}"
+        >${title ? b `<h2>${title}</h2>` : A}
         ${registryError
             ? b `<p role="alert">${registryError}</p>
                 ${this.registry.disconnected ? A : b `<button @click=${this.retry}>${this.t("retry")}</button>`}`
@@ -977,65 +1514,12 @@ class AegisCardBase extends i {
                     : !devices.length
                         ? b `<p>${this.t("empty")}</p>`
                         : b `
-                      ${!alarms.length
-                            ? b `<div class="summary">
-                              ${devices.length}
-                              ${this.t("devices", devices.length)} ·
-                              ${["online", "offline", "unknown"].map((status) => b `${devices.filter((d) => this.health(d).online === status).length} ${this.t(status)} · `)}${battery.length ? b `${this.t("battery")}: ${this.number(battery[0].value)}${battery[0].unit ?? ""}` : A}
-                            </div>`
-                            : A}
                       ${alarms.length
-                            ? b `<section
-                              class="takeover"
-                              aria-label=${this.t("alarm")}
-                            >
-                              <strong>⚠ ${this.t("alarm")}</strong>${alarms.map(({ device, alarm }) => {
-                                const since = Date.parse(alarm.state?.last_changed ?? "");
-                                const seconds = Number.isFinite(since)
-                                    ? Math.max(0, Math.floor((Date.now() - since) / 1000))
-                                    : undefined;
-                                return b `<button
-                                    data-alarm
-                                    @click=${() => this.moreInfo(alarm.entityId)}
-                                  >
-                                    ${device.name} ·
-                                    ${device.area?.name ?? this.t("noArea")}<br />${alarm.state?.attributes.friendly_name ?? alarm.registry.name ?? (alarm.state?.attributes.device_class === "heat" ? this.t("heat") : this.t("smoke"))}
-                                    ·
-                                    ${seconds === undefined ? this.t("unknown") : `${Math.floor(seconds / 60)}m ${seconds % 60}s`}
-                                    ${this.t("elapsed")}
-                                  </button>`;
-                            })}
-                              ${devices.filter((device) => this.health(device).alarm.length).map((device) => b `<button data-device=${device.id} @click=${() => this.details(device)}>${this.t("details")}: ${device.name}</button>`)}
-                            </section>`
-                            : A}
-                      ${(alarms.length ? [] : sorted).map((device) => {
-                            const health = this.health(device);
-                            const area = device.area?.name ?? this.t("noArea");
-                            const heading = !this.deviceCard &&
-                                panel.group_by === "area" &&
-                                previousArea !== (device.area?.id ?? "");
-                            previousArea = device.area?.id ?? "";
-                            return b `<section
-                          ?data-device-group=${panel.group_by === "device"}
-                          class=${panel.group_by === "device" ? "device-group" : ""}
-                        >
-                          ${heading ? b `<h3>${area}</h3>` : A}<button
-                            data-device=${device.id}
-                            class="device ${health.alarm.length ? "alarm" : health.tamper.length ? "tamper" : ""}"
-                            @click=${() => this.details(device)}
-                          >
-                            <span class="symbol" aria-hidden="true"
-                              >${health.alarm.length ? "⚠" : "◈"}</span
-                            ><span
-                              ><strong>${device.name}</strong
-                              ><span class="muted">${area}</span
-                              ><span class="readings"
-                                >${this.badges(device, health)}</span
-                              ></span
-                            >
-                          </button>
-                        </section>`;
-                        })}${alarms.length ? A : this.renderActions(this.deviceCard ? devices[0] : undefined)}
+                            ? this.renderTakeover(devices, alarms, health)
+                            : this.deviceCard
+                                ? this.renderDevice(devices[0], health(devices[0]))
+                                : b `${this.renderSummary(devices, health)}${this.renderList(sorted, health)}`}
+                      ${alarms.length ? A : this.renderActions(this.deviceCard ? devices[0] : undefined)}
                       ${disabledCount ? b `<p class="disabled-notice"><a href="/config/entities">${disabledCount} ${this.t("disabled", disabledCount)}</a></p>` : A}
                     `}${panel.alarm_entity && this.ha?.states[panel.alarm_entity] ? b `<div class="actions"><button data-alarm-control @click=${() => this.moreInfo(panel.alarm_entity)}>${this.t("alarmControl")}</button></div>` : A}${this.renderFeedback()}</ha-card
       >
@@ -1178,23 +1662,47 @@ class AegisActionCard extends AegisCardBase {
         this.requestUpdate();
     }
     renderActions(device) {
-        if (!this.config?.allow_bypass || !this.targets(device?.id).length)
+        const targets = this.targets(device?.id);
+        if (!this.config?.allow_bypass || !targets.length)
             return A;
+        // One device offers only the action its switches can take; bulk offers both.
+        const bypass = !device || targets.some((t) => t.state === "off");
+        const restore = !device || targets.some((t) => t.state === "on");
         return b `<div class="actions">
-      <button
-        data-bypass
-        ?disabled=${this.pending}
-        @click=${() => this.ask(false, device)}
-      >
-        ${this.t(device ? "bypass" : "bypassAll")}</button
-      ><button
-        data-restore
-        ?disabled=${this.pending}
-        @click=${() => this.ask(true, device)}
-      >
-        ${this.t(device ? "restore" : "restoreAll")}
-      </button>
+      ${bypass
+            ? b `<button
+              data-bypass
+              ?disabled=${this.pending}
+              @click=${() => this.ask(false, device)}
+            >
+              ${this.t(device ? "bypass" : "bypassAll")}
+            </button>`
+            : A}
+      ${restore
+            ? b `<button
+              data-restore
+              class=${device ? "primary" : ""}
+              ?disabled=${this.pending}
+              @click=${() => this.ask(true, device)}
+            >
+              ${this.t(device ? "restore" : "restoreAll")}
+            </button>`
+            : A}
     </div>`;
+    }
+    /** Restore beside a bypassed row; the same confirmation as every action. */
+    renderRowAction(device, health) {
+        if (!health.bypassed.length || !this.targets(device.id).length)
+            return A;
+        return b `<button
+      class="row-action"
+      data-row-restore=${device.id}
+      ?disabled=${this.pending}
+      aria-label="${this.t("restore")}: ${device.name}"
+      @click=${() => this.ask(true, device)}
+    >
+      ${this.t("restore")}
+    </button>`;
     }
     renderFeedback() {
         return this.feedback

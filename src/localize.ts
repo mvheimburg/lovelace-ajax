@@ -60,6 +60,18 @@ const en = {
   caution:
     "Bypass may deactivate tamper only or the whole device, depending on integration settings.",
   selection: "Selected devices",
+  bypassed: "Bypassed",
+  statusOk: "OK",
+  lowestBattery: "lowest battery",
+  noContact: "No contact for",
+  detectedFor: "Detected for",
+  triggered: "Triggered",
+  intact: "Intact",
+  tamperOnly: "Only tamper alerts are off. Smoke and heat are still reported.",
+  wholeDevice: "The whole device is bypassed and will not report.",
+  offlineNote: "Cannot report fire while offline.",
+  more: "More",
+  attention: "needs attention",
 };
 const nb: typeof en = {
   on: "På",
@@ -109,6 +121,19 @@ const nb: typeof en = {
   caution:
     "Forbikobling kan deaktivere bare sabotasje eller hele enheten, avhengig av integrasjonens innstillinger.",
   selection: "Valgte enheter",
+  bypassed: "Forbikoblet",
+  statusOk: "I orden",
+  lowestBattery: "lavest batteri",
+  noContact: "Ingen kontakt på",
+  detectedFor: "Oppdaget for",
+  triggered: "Utløst",
+  intact: "Intakt",
+  tamperOnly:
+    "Bare sabotasjevarsel er slått av. Røyk og varme varsles fortsatt.",
+  wholeDevice: "Hele enheten er forbikoblet og varsler ikke.",
+  offlineNote: "Kan ikke varsle brann mens den er frakoblet.",
+  more: "Mer",
+  attention: "trenger tilsyn",
 };
 export type MessageKey = keyof typeof en;
 export function localize(

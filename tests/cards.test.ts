@@ -185,7 +185,8 @@ it("shows offline distinctly, localizes Bokmål and dispatches entity detail eve
   hass.states["binary_sensor.workshop_connectivity"].state = "off";
   const card = await mount({}, false, hass);
   expect(card.shadowRoot!.textContent).toContain("1 frakoblet");
-  expect(card.shadowRoot!.textContent).toContain("0 ukjent");
+  expect(card.shadowRoot!.textContent).toContain("0 tilkoblet");
+  expect(card.shadowRoot!.querySelector(".row.sev-offline")).not.toBeNull();
   let entity = "";
   card.addEventListener("hass-more-info", (event) => {
     entity = (event as CustomEvent).detail.entityId;
@@ -393,4 +394,114 @@ it("uses normalized locale fallback for readings and updates language live", asy
   await settle();
   expect(card.shadowRoot!.textContent).toContain("online");
   expect(card.shadowRoot!.textContent).toContain("19.2");
+});
+
+it("summarizes issues, widens rows that need attention and restores a bypassed row after confirmation", async () => {
+  const calls: unknown[][] = [];
+  const hass = fixture();
+  hass.language = "nb";
+  hass.callService = async (...args: unknown[]) => {
+    calls.push(args);
+  };
+  hass.states["switch.workshop_bypass"].state = "on";
+  hass.states["switch.workshop_bypass"].attributes.deactivation_kinds = [
+    "permanent_tamper",
+  ];
+  const card = await mount({ allow_bypass: true }, false, hass);
+  const root = card.shadowRoot!;
+  expect(root.querySelector(".overview")?.textContent).toContain(
+    "1 forbikoblet",
+  );
+  expect(root.querySelector(".row.wide.sev-attention")).not.toBeNull();
+  expect(root.querySelector(".attention-chip")?.textContent).toBe(
+    "Forbikoblet",
+  );
+  click(root, "[data-row-restore]");
+  await settle();
+  expect(root.querySelector("#confirmation[open]")?.textContent).toContain(
+    "Gjenopprett",
+  );
+  expect(calls).toEqual([]);
+  click(root, "[data-confirm]");
+  await settle();
+  expect(calls).toEqual([
+    ["switch", "turn_off", { entity_id: "switch.workshop_bypass" }],
+  ]);
+  card.setConfig({ allow_bypass: false });
+  await settle();
+  expect(root.querySelector("[data-row-restore]")).toBeNull();
+});
+it("keeps healthy devices as compact rows and reports a quiet system", async () => {
+  const card = await mount();
+  const root = card.shadowRoot!;
+  expect(root.querySelector(".row.sev-ok:not(.wide)")).not.toBeNull();
+  expect(root.querySelector(".overview")?.textContent).toContain(
+    "No active alerts",
+  );
+});
+it("device card shows its own status, temperature and tiles without the system summary", async () => {
+  const hass = fixture();
+  hass.language = "nb-NO";
+  const card = await mount({ device: "ajax-workshop" }, true, hass);
+  const root = card.shadowRoot!;
+  expect(root.querySelector(".summary")).toBeNull();
+  expect(root.querySelector("ha-card h2")).toBeNull();
+  expect(root.querySelector(".status")?.textContent).toBe("I orden");
+  expect(root.querySelector(".hero .big")?.textContent).toBe("19,2\u00a0°C");
+  const tiles = Array.from(root.querySelectorAll(".tiles .tile")).map((tile) =>
+    tile.textContent?.replace(/\s+/g, " ").trim(),
+  );
+  expect(tiles).toContain("Batteri 44%");
+  expect(tiles).toContain("Sabotasje Intakt");
+  card.setConfig({ device: "ajax-workshop", title: "Verksted" });
+  await settle();
+  expect(root.querySelector("ha-card h2")?.textContent).toBe("Verksted");
+});
+it("device card explains tamper-only bypass and how long an offline detector has been silent", async () => {
+  const hass = fixture();
+  hass.states["switch.workshop_bypass"].state = "on";
+  hass.states["switch.workshop_bypass"].attributes.deactivation_kinds = [
+    "permanent_tamper",
+  ];
+  const card = await mount({ device: "ajax-workshop" }, true, hass);
+  const root = card.shadowRoot!;
+  expect(root.querySelector(".status")?.textContent).toBe("Bypassed");
+  expect(root.querySelector(".note")?.textContent).toContain(
+    "Smoke and heat are still reported",
+  );
+  hass.states["switch.workshop_bypass"].attributes.deactivation_kinds = [
+    "permanent_whole",
+  ];
+  card.hass = { ...hass };
+  await settle();
+  expect(root.querySelector(".note")?.textContent).toContain("will not report");
+  hass.states["switch.workshop_bypass"].state = "off";
+  hass.states["binary_sensor.workshop_connectivity"] = {
+    ...hass.states["binary_sensor.workshop_connectivity"],
+    state: "off",
+    last_changed: new Date(Date.now() - (3 * 60 + 12) * 60000).toISOString(),
+  };
+  card.hass = { ...hass };
+  await settle();
+  expect(root.querySelector(".hero.sev-offline .big")?.textContent).toBe(
+    "3 hr 12 min",
+  );
+  expect(root.querySelector(".note")?.textContent).toContain(
+    "Cannot report fire",
+  );
+  expect(root.querySelector(".status")?.textContent).toBe("offline");
+});
+it("device card alarm takeover shows a running timer and keeps details", async () => {
+  const hass = fixture();
+  hass.states["binary_sensor.workshop_smoke"].state = "on";
+  hass.states["binary_sensor.workshop_smoke"].last_changed = new Date(
+    Date.now() - 134000,
+  ).toISOString();
+  const card = await mount({ device: "ajax-workshop" }, true, hass);
+  const root = card.shadowRoot!;
+  expect(root.querySelector(".tiles")).toBeNull();
+  expect(root.querySelector("[data-alarm] .timer")?.textContent).toContain(
+    "2:14",
+  );
+  expect(root.querySelector("[data-device]")).not.toBeNull();
 });

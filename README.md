@@ -2,9 +2,11 @@
 
 Two Home Assistant dashboard cards for the [Aegis for Ajax integration](https://github.com/bvis/aegis-hass): a system overview and a focused device card. They discover Aegis devices from Home Assistant's registries, show alarm and health information, and can expose confirmed bypass controls.
 
-![Aegis Panel Card showing a simulated home with quiet and low-battery detectors](docs/aegis-panel.png)
+![Aegis Panel Card grouped by area and as a flat list, with a bypassed detector, an offline hub and a low battery](docs/aegis-panel.png)
 
-The image uses the production bundle with simulated Home Assistant registries and states. No live Home Assistant instance was used for this project.
+![Aegis Device Card in dark Bubble theme: healthy, tamper-only bypass, offline and smoke alarm](docs/aegis-device.png)
+
+The images use the production bundle with simulated Home Assistant registries and states. No live Home Assistant instance was used for this project.
 
 ## Install
 
@@ -46,6 +48,16 @@ allow_bypass: false
 ```
 
 Both cards have a visual editor. The device picker contains only devices with an `aegis_ajax` registry entity. If registry discovery fails, the editor offers a text field for an exact device ID or unique name.
+
+### What the cards show
+
+The **panel card** opens with one line naming what needs attention (for example "8 devices · 1 bypassed · 1 low battery", or "No active alerts") and tiles for online, offline and the lowest battery. Devices that need attention are full-width rows tinted by severity, with the reason first. Healthy devices are compact rows two to a line, which become one column on narrow cards. Readings from an unavailable entity are left out of the row; the offline status already covers them. With `allow_bypass: true`, a bypassed device's row has its own **Restore** button.
+
+The **device card** shows one detector: name, area and status at the top, the temperature in large type, and tiles for battery, signal and tamper. A bypassed detector explains what the bypass covers: tamper only, the whole device, or, when the integration does not say, the general caution. An offline detector shows how long it has been out of contact and, for a smoke or heat detector, that it cannot report fire. Only the bypass action the device's switches can currently take is offered.
+
+During an alarm, both cards are replaced by a red takeover listing every active smoke or heat detector with its area and a running timer.
+
+Colors come from the Home Assistant theme (`--success-color`, `--warning-color`, `--error-color`, `--orange-color` and the card background variables), so the cards follow light and dark themes. `appearance: bubble` uses the `--bubble-*` variables and rounder shapes.
 
 ## Configuration
 
@@ -102,6 +114,10 @@ node scripts/screenshot.cjs
 Tests and screenshots exercise simulated registry, state, event, and service boundaries in Chromium. They do not claim live Home Assistant verification.
 
 Released under the [MIT License](LICENSE).
+
+### Redesign (0.2.0)
+
+Both cards were redesigned: summary tiles, severity-ordered rows, a per-row **Restore** action, and a device card with a temperature readout, reading tiles and plain explanations of bypass and offline states. Configuration options are unchanged. The device card no longer shows the system summary line, and it shows a heading only when `title` is set.
 
 ### Language (0.1.1)
 

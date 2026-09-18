@@ -457,3 +457,26 @@ it("requires fresh confirmation after detaching across a transport disconnect", 
   await settle();
   expect(calls).toEqual([]);
 });
+
+it("a device card offers only the bypass action its switch can take", async () => {
+  const hass = fixture() as HomeAssistant;
+  const card = document.createElement("aegis-device-card") as HTMLElement & {
+    setConfig(config: Record<string, unknown>): void;
+    hass: HomeAssistant;
+  };
+  card.setConfig({ device: "ajax-workshop", allow_bypass: true });
+  card.hass = hass;
+  document.body.append(card);
+  await settle();
+  const root = card.shadowRoot!;
+  expect(root.querySelector("ha-card [data-bypass]")).not.toBeNull();
+  expect(root.querySelector("ha-card [data-restore]")).toBeNull();
+  hass.states["switch.workshop_bypass"] = {
+    ...hass.states["switch.workshop_bypass"],
+    state: "on",
+  };
+  card.hass = { ...hass };
+  await settle();
+  expect(root.querySelector("ha-card [data-bypass]")).toBeNull();
+  expect(root.querySelector("ha-card [data-restore]")).not.toBeNull();
+});

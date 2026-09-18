@@ -1,6 +1,6 @@
 import { html, nothing } from "lit";
 import { AegisCardBase } from "./card-base";
-import type { AegisDevice, HassConnection } from "./types";
+import type { AegisDevice, DeviceHealth, HassConnection } from "./types";
 interface Target {
   entityId: string;
   deviceId: string;
@@ -139,23 +139,50 @@ export class AegisActionCard extends AegisCardBase {
     this.requestUpdate();
   }
   protected renderActions(device?: AegisDevice) {
-    if (!this.config?.allow_bypass || !this.targets(device?.id).length)
-      return nothing;
+    const targets = this.targets(device?.id);
+    if (!this.config?.allow_bypass || !targets.length) return nothing;
+    // One device offers only the action its switches can take; bulk offers both.
+    const bypass = !device || targets.some((t) => t.state === "off");
+    const restore = !device || targets.some((t) => t.state === "on");
     return html`<div class="actions">
-      <button
-        data-bypass
-        ?disabled=${this.pending}
-        @click=${() => this.ask(false, device)}
-      >
-        ${this.t(device ? "bypass" : "bypassAll")}</button
-      ><button
-        data-restore
-        ?disabled=${this.pending}
-        @click=${() => this.ask(true, device)}
-      >
-        ${this.t(device ? "restore" : "restoreAll")}
-      </button>
+      ${
+        bypass
+          ? html`<button
+              data-bypass
+              ?disabled=${this.pending}
+              @click=${() => this.ask(false, device)}
+            >
+              ${this.t(device ? "bypass" : "bypassAll")}
+            </button>`
+          : nothing
+      }
+      ${
+        restore
+          ? html`<button
+              data-restore
+              class=${device ? "primary" : ""}
+              ?disabled=${this.pending}
+              @click=${() => this.ask(true, device)}
+            >
+              ${this.t(device ? "restore" : "restoreAll")}
+            </button>`
+          : nothing
+      }
     </div>`;
+  }
+  /** Restore beside a bypassed row; the same confirmation as every action. */
+  protected renderRowAction(device: AegisDevice, health: DeviceHealth) {
+    if (!health.bypassed.length || !this.targets(device.id).length)
+      return nothing;
+    return html`<button
+      class="row-action"
+      data-row-restore=${device.id}
+      ?disabled=${this.pending}
+      aria-label="${this.t("restore")}: ${device.name}"
+      @click=${() => this.ask(true, device)}
+    >
+      ${this.t("restore")}
+    </button>`;
   }
   protected renderFeedback() {
     return this.feedback
