@@ -72,6 +72,7 @@ const en = {
   offlineNote: "Cannot report fire while offline.",
   more: "More",
   attention: "needs attention",
+  allReadings: "All readings",
 };
 const nb: typeof en = {
   on: "På",
@@ -134,6 +135,7 @@ const nb: typeof en = {
   offlineNote: "Kan ikke varsle brann mens den er frakoblet.",
   more: "Mer",
   attention: "trenger tilsyn",
+  allReadings: "Alle målinger",
 };
 export type MessageKey = keyof typeof en;
 export function localize(

@@ -349,9 +349,44 @@ export const styles = css`
   a {
     color: var(--primary-color, #0277bd);
   }
+  /* The details dialog is the device card as a modal; it sits outside
+     ha-card, so it carries the card's tokens itself. */
+  dialog {
+    --aegis-surface: var(
+      --ha-card-background,
+      var(--card-background-color, #fff)
+    );
+    --aegis-pill: var(--secondary-background-color, #f3f2ee);
+    --aegis-pill-radius: 20px;
+    --aegis-tile-radius: 16px;
+  }
+  dialog.bubble {
+    --aegis-surface: var(
+      --bubble-main-background-color,
+      var(--ha-card-background, var(--card-background-color, #fff))
+    );
+    --aegis-pill: var(
+      --bubble-secondary-background-color,
+      var(--secondary-background-color, #f3f2ee)
+    );
+    --aegis-pill-radius: var(--bubble-border-radius, 32px);
+    --aegis-tile-radius: var(--bubble-sub-button-border-radius, 22px);
+    border-radius: var(--bubble-border-radius, 32px);
+  }
+  dialog[open] {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .all-readings summary {
+    cursor: pointer;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: var(--aegis-muted);
+  }
   dialog {
     color: var(--primary-text-color, #1b1b1a);
-    background: var(--card-background-color, #fff);
+    background: var(--aegis-surface);
     border: 0;
     border-radius: 24px;
     padding: 24px;

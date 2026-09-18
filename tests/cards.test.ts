@@ -505,3 +505,24 @@ it("device card alarm takeover shows a running timer and keeps details", async (
   );
   expect(root.querySelector("[data-device]")).not.toBeNull();
 });
+it("opens a tapped device as its device card in a modal, with every reading one tap away", async () => {
+  const hass = fixture();
+  hass.language = "nb";
+  const card = await mount({ appearance: "bubble" }, false, hass);
+  const root = card.shadowRoot!;
+  click(root, "[data-device]");
+  await settle();
+  const dialog = root.querySelector<HTMLDialogElement>("#details")!;
+  expect(dialog.open).toBe(true);
+  expect(dialog.classList.contains("bubble")).toBe(true);
+  expect(dialog.querySelector("#detail-title")?.textContent).toBe("Workshop");
+  expect(dialog.querySelector(".status")?.textContent).toBe("I orden");
+  expect(dialog.querySelector(".hero .big")?.textContent).toBe("19,2 °C");
+  expect(dialog.querySelectorAll(".tiles .tile").length).toBeGreaterThan(0);
+  expect(dialog.querySelector("[data-device]")).toBeNull();
+  expect(root.activeElement?.textContent?.trim()).toBe("Lukk");
+  const readings = dialog.querySelector<HTMLDetailsElement>(".all-readings")!;
+  expect(readings.open).toBe(false);
+  expect(readings.querySelector("summary")?.textContent).toBe("Alle målinger");
+  expect(readings.querySelectorAll(".entity").length).toBeGreaterThan(5);
+});

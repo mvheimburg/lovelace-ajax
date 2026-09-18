@@ -401,7 +401,8 @@ export class AegisCardBase extends LitElement {
       </div>
     </section>`;
   }
-  private renderDevice(device: AegisDevice, h: DeviceHealth) {
+  /** One device as its card; `modal` renders it inside the details dialog. */
+  private renderDevice(device: AegisDevice, h: DeviceHealth, modal = false) {
     const severity = this.severity(h);
     const states = this.ha!.states;
     const temperatures = this.config!.show_temperature
@@ -439,21 +440,24 @@ export class AegisCardBase extends LitElement {
       </div>`;
     const note = (text: string, severity: string) =>
       html`<p class="note ${severity}">${text}</p>`;
+    const head = html`<span class="icon">${icon(severity)}</span
+      ><span class="text"
+        ><strong id=${modal ? "detail-title" : nothing}>${device.name}</strong
+        ><span class="sub">${device.area?.name ?? this.t("noArea")}</span></span
+      ><span class="status">${this.statusLabel(h, severity)}</span>`;
     return html`<div class="row head sev-${severity}">
-        <button
-          data-device=${device.id}
-          class="pill"
-          aria-label="${device.name}: ${this.t("details")}"
-          @click=${() => this.details(device)}
-        >
-          <span class="icon">${icon(severity)}</span
-          ><span class="text"
-            ><strong>${device.name}</strong
-            ><span class="sub"
-              >${device.area?.name ?? this.t("noArea")}</span
-            ></span
-          ><span class="status">${this.statusLabel(h, severity)}</span>
-        </button>
+        ${
+          modal
+            ? html`<div class="pill">${head}</div>`
+            : html`<button
+                data-device=${device.id}
+                class="pill"
+                aria-label="${device.name}: ${this.t("details")}"
+                @click=${() => this.details(device)}
+              >
+                ${head}
+              </button>`
+        }
       </div>
       ${
         offlineHero
@@ -595,29 +599,39 @@ export class AegisCardBase extends LitElement {
                     `
         }${panel.alarm_entity && this.ha?.states[panel.alarm_entity] ? html`<div class="actions"><button data-alarm-control @click=${() => this.moreInfo(panel.alarm_entity!)}>${this.t("alarmControl")}</button></div>` : nothing}${this.renderFeedback()}</ha-card
       >
-      <dialog id="details" aria-labelledby="detail-title">
-        <h2 id="detail-title">${detail?.name}</h2>
+      <dialog
+        id="details"
+        class="${this.config.appearance} device-card"
+        aria-labelledby="detail-title"
+      >
         ${
           detail
-            ? html`${Object.entries(detail.entities).map(([role, entities]) =>
-                role === "temperature" && !this.config?.show_temperature
-                  ? nothing
-                  : entities.length
-                    ? html`<h3>${this.t(role as EntityRole as MessageKey)}</h3>
-                        ${entities.map((entity) => html`<button class="entity" @click=${() => this.moreInfo(entity.entityId)}><span>${this.ha?.states[entity.entityId]?.attributes.friendly_name ?? entity.registry.name ?? entity.entityId}</span><span>${this.reading(entity.entityId)}</span></button>`)}`
-                    : nothing,
-              )}${this.health(detail).bypassed.map(
-                (bypass) =>
-                  html`<p>
-                      ${this.t("deactivation")}:
-                      ${bypass.deactivationKinds.join(", ") || this.t("unknown")}
-                    </p>
-                    <p>${this.t("caution")}</p>`,
-              )}${detail.disabledCount ? html`<p><a href="/config/entities">${detail.disabledCount} ${this.t("disabled", detail.disabledCount)}</a></p>` : nothing}${this.renderActions(detail)}${this.renderFeedback()}`
+            ? html`${this.renderDevice(detail, this.health(detail), true)}${this.renderActions(detail)}${this.renderFeedback()}
+                <details class="all-readings">
+                  <summary>${this.t("allReadings")}</summary>
+                  ${Object.entries(detail.entities).map(([role, entities]) =>
+                    role === "temperature" && !this.config?.show_temperature
+                      ? nothing
+                      : entities.length
+                        ? html`<h3>
+                              ${this.t(role as EntityRole as MessageKey)}
+                            </h3>
+                            ${entities.map((entity) => html`<button class="entity" @click=${() => this.moreInfo(entity.entityId)}><span>${this.ha?.states[entity.entityId]?.attributes.friendly_name ?? entity.registry.name ?? entity.entityId}</span><span>${this.reading(entity.entityId)}</span></button>`)}`
+                        : nothing,
+                  )}${this.health(detail).bypassed.map(
+                    (bypass) =>
+                      html`<p>
+                        ${this.t("deactivation")}:
+                        ${bypass.deactivationKinds.join(", ") || this.t("unknown")}
+                      </p>`,
+                  )}${detail.disabledCount ? html`<p><a href="/config/entities">${detail.disabledCount} ${this.t("disabled", detail.disabledCount)}</a></p>` : nothing}
+                </details>`
             : nothing
         }
         <div class="actions">
+          <!-- Opening focus goes to Close, not to a bypass action. -->
           <button
+            autofocus
             @click=${() => this.shadowRoot!.querySelector<HTMLDialogElement>("#details")!.close()}
           >
             ${this.t("close")}

@@ -250,9 +250,33 @@ async function render(browser, errors, { width, height, theme, cards }) {
       fullPage: true,
     });
 
+    const modal = await render(browser, errors, {
+      width: 900,
+      height: 820,
+      theme: dark,
+      cards: [
+        {
+          tag: "aegis-panel-card",
+          width: 440,
+          config: {
+            type: "custom:aegis-panel-card",
+            title: "Fire safety",
+            appearance: "bubble",
+            allow_bypass: true,
+          },
+        },
+      ],
+    });
+    await modal.evaluate(async () => {
+      const card = document.querySelector("aegis-panel-card");
+      card.shadowRoot.querySelector('[data-device="garage"]').click();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+    await modal.screenshot({ path: resolve(root, "docs/aegis-modal.png") });
+
     if (errors.length) throw new Error(`Browser errors: ${errors.join("; ")}`);
     console.log(
-      "Wrote docs/aegis-panel.png and docs/aegis-device.png from dist/aegis-panel-card.js with simulated Home Assistant data.",
+      "Wrote docs/aegis-panel.png, docs/aegis-device.png and docs/aegis-modal.png from dist/aegis-panel-card.js with simulated Home Assistant data.",
     );
   } finally {
     await browser.close();

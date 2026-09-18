@@ -53,6 +53,10 @@ Both cards have a visual editor. The device picker contains only devices with an
 
 The **panel card** opens with one line naming what needs attention (for example "8 devices · 1 bypassed · 1 low battery", or "No active alerts") and tiles for online, offline and the lowest battery. Devices that need attention are full-width rows tinted by severity, with the reason first. Healthy devices are compact rows two to a line, which become one column on narrow cards. Readings from an unavailable entity are left out of the row; the offline status already covers them. With `allow_bypass: true`, a bypassed device's row has its own **Restore** button.
 
+Tapping a device in the panel opens that device's card in a modal (below), with its full list of readings under **All readings** and native more-info one tap further.
+
+![A tapped device opened as its device card in a modal over the panel](docs/aegis-modal.png)
+
 The **device card** shows one detector: name, area and status at the top, the temperature in large type, and tiles for battery, signal and tamper. A bypassed detector explains what the bypass covers: tamper only, the whole device, or, when the integration does not say, the general caution. An offline detector shows how long it has been out of contact and, for a smoke or heat detector, that it cannot report fire. Only the bypass action the device's switches can currently take is offered.
 
 During an alarm, both cards are replaced by a red takeover listing every active smoke or heat detector with its area and a running timer.
@@ -114,6 +118,10 @@ node scripts/screenshot.cjs
 Tests and screenshots exercise simulated registry, state, event, and service boundaries in Chromium. They do not claim live Home Assistant verification.
 
 Released under the [MIT License](LICENSE).
+
+### Device modal (0.3.0)
+
+Tapping a device in the panel opens its device card as a modal instead of a plain list of entities. The entity list is still there, collapsed under **All readings**. Focus starts on **Close**, not on a bypass action.
 
 ### Redesign (0.2.0)
 

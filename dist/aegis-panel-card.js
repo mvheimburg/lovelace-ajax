@@ -507,6 +507,7 @@ const en = {
     offlineNote: "Cannot report fire while offline.",
     more: "More",
     attention: "needs attention",
+    allReadings: "All readings",
 };
 const nb = {
     on: "På",
@@ -567,6 +568,7 @@ const nb = {
     offlineNote: "Kan ikke varsle brann mens den er frakoblet.",
     more: "Mer",
     attention: "trenger tilsyn",
+    allReadings: "Alle målinger",
 };
 function localize(language, key, count) {
     const norwegian = /^(nb|no|nn)(-|$)/.test((language ?? "").replace(/_/g, "-").toLowerCase());
@@ -929,9 +931,44 @@ const styles = i$3 `
   a {
     color: var(--primary-color, #0277bd);
   }
+  /* The details dialog is the device card as a modal; it sits outside
+     ha-card, so it carries the card's tokens itself. */
+  dialog {
+    --aegis-surface: var(
+      --ha-card-background,
+      var(--card-background-color, #fff)
+    );
+    --aegis-pill: var(--secondary-background-color, #f3f2ee);
+    --aegis-pill-radius: 20px;
+    --aegis-tile-radius: 16px;
+  }
+  dialog.bubble {
+    --aegis-surface: var(
+      --bubble-main-background-color,
+      var(--ha-card-background, var(--card-background-color, #fff))
+    );
+    --aegis-pill: var(
+      --bubble-secondary-background-color,
+      var(--secondary-background-color, #f3f2ee)
+    );
+    --aegis-pill-radius: var(--bubble-border-radius, 32px);
+    --aegis-tile-radius: var(--bubble-sub-button-border-radius, 22px);
+    border-radius: var(--bubble-border-radius, 32px);
+  }
+  dialog[open] {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .all-readings summary {
+    cursor: pointer;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: var(--aegis-muted);
+  }
   dialog {
     color: var(--primary-text-color, #1b1b1a);
-    background: var(--card-background-color, #fff);
+    background: var(--aegis-surface);
     border: 0;
     border-radius: 24px;
     padding: 24px;
@@ -1376,7 +1413,8 @@ class AegisCardBase extends i {
       </div>
     </section>`;
     }
-    renderDevice(device, h) {
+    /** One device as its card; `modal` renders it inside the details dialog. */
+    renderDevice(device, h, modal = false) {
         const severity = this.severity(h);
         const states = this.ha.states;
         const temperatures = this.config.show_temperature
@@ -1408,21 +1446,22 @@ class AegisCardBase extends i {
         <span class="label">${label}</span> <span class="value">${value}</span>
       </div>`;
         const note = (text, severity) => b `<p class="note ${severity}">${text}</p>`;
+        const head = b `<span class="icon">${icon(severity)}</span
+      ><span class="text"
+        ><strong id=${modal ? "detail-title" : A}>${device.name}</strong
+        ><span class="sub">${device.area?.name ?? this.t("noArea")}</span></span
+      ><span class="status">${this.statusLabel(h, severity)}</span>`;
         return b `<div class="row head sev-${severity}">
-        <button
-          data-device=${device.id}
-          class="pill"
-          aria-label="${device.name}: ${this.t("details")}"
-          @click=${() => this.details(device)}
-        >
-          <span class="icon">${icon(severity)}</span
-          ><span class="text"
-            ><strong>${device.name}</strong
-            ><span class="sub"
-              >${device.area?.name ?? this.t("noArea")}</span
-            ></span
-          ><span class="status">${this.statusLabel(h, severity)}</span>
-        </button>
+        ${modal
+            ? b `<div class="pill">${head}</div>`
+            : b `<button
+                data-device=${device.id}
+                class="pill"
+                aria-label="${device.name}: ${this.t("details")}"
+                @click=${() => this.details(device)}
+              >
+                ${head}
+              </button>`}
       </div>
       ${offlineHero
             ? b `<div class="hero sev-offline">
@@ -1523,22 +1562,32 @@ class AegisCardBase extends i {
                       ${disabledCount ? b `<p class="disabled-notice"><a href="/config/entities">${disabledCount} ${this.t("disabled", disabledCount)}</a></p>` : A}
                     `}${panel.alarm_entity && this.ha?.states[panel.alarm_entity] ? b `<div class="actions"><button data-alarm-control @click=${() => this.moreInfo(panel.alarm_entity)}>${this.t("alarmControl")}</button></div>` : A}${this.renderFeedback()}</ha-card
       >
-      <dialog id="details" aria-labelledby="detail-title">
-        <h2 id="detail-title">${detail?.name}</h2>
+      <dialog
+        id="details"
+        class="${this.config.appearance} device-card"
+        aria-labelledby="detail-title"
+      >
         ${detail
-            ? b `${Object.entries(detail.entities).map(([role, entities]) => role === "temperature" && !this.config?.show_temperature
+            ? b `${this.renderDevice(detail, this.health(detail), true)}${this.renderActions(detail)}${this.renderFeedback()}
+                <details class="all-readings">
+                  <summary>${this.t("allReadings")}</summary>
+                  ${Object.entries(detail.entities).map(([role, entities]) => role === "temperature" && !this.config?.show_temperature
                 ? A
                 : entities.length
-                    ? b `<h3>${this.t(role)}</h3>
-                        ${entities.map((entity) => b `<button class="entity" @click=${() => this.moreInfo(entity.entityId)}><span>${this.ha?.states[entity.entityId]?.attributes.friendly_name ?? entity.registry.name ?? entity.entityId}</span><span>${this.reading(entity.entityId)}</span></button>`)}`
+                    ? b `<h3>
+                              ${this.t(role)}
+                            </h3>
+                            ${entities.map((entity) => b `<button class="entity" @click=${() => this.moreInfo(entity.entityId)}><span>${this.ha?.states[entity.entityId]?.attributes.friendly_name ?? entity.registry.name ?? entity.entityId}</span><span>${this.reading(entity.entityId)}</span></button>`)}`
                     : A)}${this.health(detail).bypassed.map((bypass) => b `<p>
-                      ${this.t("deactivation")}:
-                      ${bypass.deactivationKinds.join(", ") || this.t("unknown")}
-                    </p>
-                    <p>${this.t("caution")}</p>`)}${detail.disabledCount ? b `<p><a href="/config/entities">${detail.disabledCount} ${this.t("disabled", detail.disabledCount)}</a></p>` : A}${this.renderActions(detail)}${this.renderFeedback()}`
+                        ${this.t("deactivation")}:
+                        ${bypass.deactivationKinds.join(", ") || this.t("unknown")}
+                      </p>`)}${detail.disabledCount ? b `<p><a href="/config/entities">${detail.disabledCount} ${this.t("disabled", detail.disabledCount)}</a></p>` : A}
+                </details>`
             : A}
         <div class="actions">
+          <!-- Opening focus goes to Close, not to a bypass action. -->
           <button
+            autofocus
             @click=${() => this.shadowRoot.querySelector("#details").close()}
           >
             ${this.t("close")}
