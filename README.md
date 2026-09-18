@@ -1,3 +1,5 @@
+<img src="docs/icon.png" alt="" width="96" align="right">
+
 # Aegis Panel Card
 
 Two Home Assistant dashboard cards for the [Aegis for Ajax integration](https://github.com/bvis/aegis-hass): a system overview and a focused device card. They discover Aegis devices from Home Assistant's registries, show alarm and health information, and can expose confirmed bypass controls.
