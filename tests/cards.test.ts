@@ -375,3 +375,22 @@ it("removes healthy readings while disconnected and discovers changed membership
     card.shadowRoot!.querySelector(".disabled-notice")?.textContent,
   ).toContain("2");
 });
+it("uses normalized locale fallback for readings and updates language live", async () => {
+  const hass = {
+    ...fixture(),
+    language: undefined,
+    locale: { language: "NB_no" },
+  };
+  const card = await mount({}, false, hass);
+  expect(card.shadowRoot!.textContent).toContain("tilkoblet");
+  expect(card.shadowRoot!.textContent).toContain("19,2");
+  click(card.shadowRoot!, "[data-device]");
+  await settle();
+  expect(card.shadowRoot!.querySelector("#details")?.textContent).toContain(
+    "Av",
+  );
+  card.hass = { ...hass, language: "en" };
+  await settle();
+  expect(card.shadowRoot!.textContent).toContain("online");
+  expect(card.shadowRoot!.textContent).toContain("19.2");
+});

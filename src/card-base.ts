@@ -2,7 +2,7 @@ import { LitElement, html, nothing, type TemplateResult } from "lit";
 import { validateConfig, type CardConfig, type PanelConfig } from "./config";
 import { deviceHealth, discoverDevices } from "./model";
 import { watchRegistries, refreshRegistries } from "./registry";
-import { localize, type MessageKey } from "./localize";
+import { language, localize, type MessageKey } from "./localize";
 import { styles } from "./styles";
 import type {
   AegisDevice,
@@ -24,7 +24,7 @@ export class AegisCardBase extends LitElement {
   private timer?: ReturnType<typeof setInterval>;
   private detailId?: string;
   protected t(key: MessageKey, count?: number) {
-    return localize(this.ha?.language, key, count);
+    return localize(language(this.ha), key, count);
   }
   set hass(value: HomeAssistant) {
     const replace = this.ha?.connection !== value.connection;
@@ -107,13 +107,18 @@ export class AegisCardBase extends LitElement {
       ?.querySelectorAll("dialog")
       .forEach((dialog) => dialog.close());
   }
+  private number(value: number): string {
+    return new Intl.NumberFormat(language(this.ha), {
+      maximumFractionDigits: 10,
+    }).format(value);
+  }
   private reading(entityId: string) {
     const state = this.ha?.states[entityId];
     return !state || state.state === "unknown"
       ? this.t("unknown")
       : state.state === "unavailable"
         ? this.t("offline")
-        : `${state.state} ${state.attributes.unit_of_measurement ?? ""}`.trim();
+        : `${state.state === "on" || state.state === "off" ? this.t(state.state) : state.state.trim() && Number.isFinite(Number(state.state)) ? this.number(Number(state.state)) : state.state} ${state.attributes.unit_of_measurement ?? ""}`.trim();
   }
   private badges(device: AegisDevice, health: DeviceHealth) {
     const active = (
@@ -137,7 +142,7 @@ export class AegisCardBase extends LitElement {
         >${label}${value !== undefined ? `: ${value}` : ""}</span
       >`;
     return html`${chip(this.t(health.online))}${active.map((label) => chip(label, undefined, label === this.t("alarm") ? "alarm-chip" : label === this.t("tamper") || label === this.t("bypass") ? "attention-chip" : ""))}
-    ${device.entities.battery.length ? chip(this.t("battery"), health.minBattery?.value !== undefined ? `${health.minBattery.value}${health.minBattery.unit ?? "%"}` : device.entities.battery.map((e) => this.reading(e.entityId)).join(", ")) : nothing}
+    ${device.entities.battery.length ? chip(this.t("battery"), health.minBattery?.value !== undefined ? `${this.number(health.minBattery.value)}${health.minBattery.unit ?? "%"}` : device.entities.battery.map((e) => this.reading(e.entityId)).join(", ")) : nothing}
     ${device.entities.signal.map((e) => chip(this.t("signal"), this.reading(e.entityId)))}
     ${this.config?.show_temperature ? device.entities.temperature.map((e) => chip(this.t("temperature"), this.reading(e.entityId))) : nothing}`;
   }
@@ -222,7 +227,7 @@ export class AegisCardBase extends LitElement {
                           ? html`<div class="summary">
                               ${devices.length}
                               ${this.t("devices", devices.length)} ·
-                              ${(["online", "offline", "unknown"] as const).map((status) => html`${devices.filter((d) => this.health(d).online === status).length} ${this.t(status)} · `)}${battery.length ? html`${this.t("battery")}: ${battery[0].value}${battery[0].unit ?? ""}` : nothing}
+                              ${(["online", "offline", "unknown"] as const).map((status) => html`${devices.filter((d) => this.health(d).online === status).length} ${this.t(status)} · `)}${battery.length ? html`${this.t("battery")}: ${this.number(battery[0].value!)}${battery[0].unit ?? ""}` : nothing}
                             </div>`
                           : nothing
                       }

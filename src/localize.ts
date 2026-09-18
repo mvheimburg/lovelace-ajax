@@ -1,4 +1,20 @@
+import type { HomeAssistant } from "./types";
+export function language(
+  hass?: Pick<HomeAssistant, "language" | "locale">,
+): string {
+  const value = (hass?.language || hass?.locale?.language || "en")
+    .replace(/_/g, "-")
+    .toLowerCase();
+  if (/^(nb|nn|no)(-|$)/.test(value)) return "nb-NO";
+  try {
+    return Intl.getCanonicalLocales(value)[0] ?? "en";
+  } catch {
+    return "en";
+  }
+}
 const en = {
+  on: "On",
+  off: "Off",
   details: "Details",
   heat: "Heat",
   smoke: "Smoke",
@@ -46,6 +62,8 @@ const en = {
   selection: "Selected devices",
 };
 const nb: typeof en = {
+  on: "På",
+  off: "Av",
   details: "Detaljer",
   heat: "Varme",
   smoke: "Røyk",
@@ -98,7 +116,9 @@ export function localize(
   key: MessageKey,
   count?: number,
 ): string {
-  const norwegian = /^(nb|no|nn)(-|$)/.test(language ?? "");
+  const norwegian = /^(nb|no|nn)(-|$)/.test(
+    (language ?? "").replace(/_/g, "-").toLowerCase(),
+  );
   if (count === 1 && key === "devices") return norwegian ? "enhet" : "device";
   if (count === 1 && key === "disabled")
     return norwegian

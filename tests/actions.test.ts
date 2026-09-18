@@ -22,7 +22,7 @@ it("hides bypass controls by default", async () => {
 });
 it("cancel makes no call and confirm sends only the current Aegis bypass target", async () => {
   const calls: unknown[][] = [];
-  const { root } = await mount(true, async (...args) => {
+  const { root, hass } = await mount(true, async (...args) => {
     calls.push(args);
   });
   click(root, "[data-bypass]");
@@ -44,7 +44,8 @@ it("cancel makes no call and confirm sends only the current Aegis bypass target"
   expect(root.textContent).toContain("Waiting for Home Assistant");
   click(root, "[data-device]");
   await settle();
-  expect(root.querySelector("#details")?.textContent).toContain("off");
+  expect(root.querySelector("#details")?.textContent).toContain("Off");
+  expect(hass.states["switch.workshop_bypass"].state).toBe("off");
 });
 it("revalidates permission on config changes and availability on state changes", async () => {
   const calls: unknown[][] = [];

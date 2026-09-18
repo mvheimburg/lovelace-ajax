@@ -1,3 +1,4 @@
+import { language } from "./localize";
 import { LitElement, css, html, nothing } from "lit";
 import type { PropertyValues } from "lit";
 import { watchRegistries } from "./registry";
@@ -102,9 +103,7 @@ abstract class AegisEditor extends LitElement {
   }
 
   protected get text() {
-    return /^(nb|no|nn)(-|$)/.test(this.hass?.language ?? "")
-      ? copy.nb
-      : copy.en;
+    return /^(nb|no|nn)(-|$)/.test(language(this.hass)) ? copy.nb : copy.en;
   }
 
   private startRegistryWatch(): void {

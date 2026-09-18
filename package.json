@@ -1,6 +1,6 @@
 {
   "name": "lovelace-ajax",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Lovelace cards for the Aegis for Ajax integration",
   "type": "module",
   "scripts": {

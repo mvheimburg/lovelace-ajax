@@ -299,3 +299,26 @@ it("recovers device choices from same-Connection ready after an offline rename a
     ).map((option) => option.value),
   ).toEqual([""]);
 });
+it("localizes both editors from locale fallback and keeps raw grouping values", async () => {
+  for (const tag of [
+    "aegis-panel-card-editor",
+    "aegis-device-card-editor",
+  ] as const) {
+    const hass = {
+      ...fixture(),
+      language: undefined,
+      locale: { language: "NO_no" },
+    };
+    const editor = await mount(tag, {}, hass);
+    expect(editor.shadowRoot!.textContent).toContain("Utseende");
+    if (tag === "aegis-device-card-editor")
+      expect(editor.shadowRoot!.textContent).toContain("Workshop");
+    if (tag === "aegis-panel-card-editor") {
+      const config = await change(editor, '[name="group_by"]', "device");
+      expect(config.group_by).toBe("device");
+    }
+    editor.hass = { ...hass, language: "en" };
+    await settle();
+    expect(editor.shadowRoot!.textContent).toContain("Appearance");
+  }
+});

@@ -435,7 +435,22 @@ function refreshRegistries(hass) {
     void sharedByConnection.get(hass.connection)?.refresh();
 }
 
+function language(hass) {
+    const value = (hass?.language || hass?.locale?.language || "en")
+        .replace(/_/g, "-")
+        .toLowerCase();
+    if (/^(nb|nn|no)(-|$)/.test(value))
+        return "nb-NO";
+    try {
+        return Intl.getCanonicalLocales(value)[0] ?? "en";
+    }
+    catch {
+        return "en";
+    }
+}
 const en = {
+    on: "On",
+    off: "Off",
     details: "Details",
     heat: "Heat",
     smoke: "Smoke",
@@ -482,6 +497,8 @@ const en = {
     selection: "Selected devices",
 };
 const nb = {
+    on: "På",
+    off: "Av",
     details: "Detaljer",
     heat: "Varme",
     smoke: "Røyk",
@@ -528,7 +545,7 @@ const nb = {
     selection: "Valgte enheter",
 };
 function localize(language, key, count) {
-    const norwegian = /^(nb|no|nn)(-|$)/.test(language ?? "");
+    const norwegian = /^(nb|no|nn)(-|$)/.test((language ?? "").replace(/_/g, "-").toLowerCase());
     if (count === 1 && key === "devices")
         return norwegian ? "enhet" : "device";
     if (count === 1 && key === "disabled")
@@ -774,7 +791,7 @@ class AegisCardBase extends i {
         this.registryEpoch = 0;
     }
     t(key, count) {
-        return localize(this.ha?.language, key, count);
+        return localize(language(this.ha), key, count);
     }
     set hass(value) {
         const replace = this.ha?.connection !== value.connection;
@@ -860,13 +877,18 @@ class AegisCardBase extends i {
             ?.querySelectorAll("dialog")
             .forEach((dialog) => dialog.close());
     }
+    number(value) {
+        return new Intl.NumberFormat(language(this.ha), {
+            maximumFractionDigits: 10,
+        }).format(value);
+    }
     reading(entityId) {
         const state = this.ha?.states[entityId];
         return !state || state.state === "unknown"
             ? this.t("unknown")
             : state.state === "unavailable"
                 ? this.t("offline")
-                : `${state.state} ${state.attributes.unit_of_measurement ?? ""}`.trim();
+                : `${state.state === "on" || state.state === "off" ? this.t(state.state) : state.state.trim() && Number.isFinite(Number(state.state)) ? this.number(Number(state.state)) : state.state} ${state.attributes.unit_of_measurement ?? ""}`.trim();
     }
     badges(device, health) {
         const active = [
@@ -887,7 +909,7 @@ class AegisCardBase extends i {
         >${label}${value !== undefined ? `: ${value}` : ""}</span
       >`;
         return b `${chip(this.t(health.online))}${active.map((label) => chip(label, undefined, label === this.t("alarm") ? "alarm-chip" : label === this.t("tamper") || label === this.t("bypass") ? "attention-chip" : ""))}
-    ${device.entities.battery.length ? chip(this.t("battery"), health.minBattery?.value !== undefined ? `${health.minBattery.value}${health.minBattery.unit ?? "%"}` : device.entities.battery.map((e) => this.reading(e.entityId)).join(", ")) : A}
+    ${device.entities.battery.length ? chip(this.t("battery"), health.minBattery?.value !== undefined ? `${this.number(health.minBattery.value)}${health.minBattery.unit ?? "%"}` : device.entities.battery.map((e) => this.reading(e.entityId)).join(", ")) : A}
     ${device.entities.signal.map((e) => chip(this.t("signal"), this.reading(e.entityId)))}
     ${this.config?.show_temperature ? device.entities.temperature.map((e) => chip(this.t("temperature"), this.reading(e.entityId))) : A}`;
     }
@@ -959,7 +981,7 @@ class AegisCardBase extends i {
                             ? b `<div class="summary">
                               ${devices.length}
                               ${this.t("devices", devices.length)} ·
-                              ${["online", "offline", "unknown"].map((status) => b `${devices.filter((d) => this.health(d).online === status).length} ${this.t(status)} · `)}${battery.length ? b `${this.t("battery")}: ${battery[0].value}${battery[0].unit ?? ""}` : A}
+                              ${["online", "offline", "unknown"].map((status) => b `${devices.filter((d) => this.health(d).online === status).length} ${this.t(status)} · `)}${battery.length ? b `${this.t("battery")}: ${this.number(battery[0].value)}${battery[0].unit ?? ""}` : A}
                             </div>`
                             : A}
                       ${alarms.length
@@ -1311,9 +1333,7 @@ class AegisEditor extends i {
         super.disconnectedCallback();
     }
     get text() {
-        return /^(nb|no|nn)(-|$)/.test(this.hass?.language ?? "")
-            ? copy.nb
-            : copy.en;
+        return /^(nb|no|nn)(-|$)/.test(language(this.hass)) ? copy.nb : copy.en;
     }
     startRegistryWatch() {
         const hass = this._hass;

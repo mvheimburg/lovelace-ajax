@@ -102,3 +102,7 @@ node scripts/screenshot.cjs
 Tests and screenshots exercise simulated registry, state, event, and service boundaries in Chromium. They do not claim live Home Assistant verification.
 
 Released under the [MIT License](LICENSE).
+
+### Language (0.1.1)
+
+Cards and visual editors follow Home Assistant's active `hass.language`, falling back to `hass.locale.language`. Bokmål supports `nb`, `nb-NO`, and `no` (including case and underscore variants); existing `nn` support is retained. Other languages fall back to English. Language changes update the UI immediately, including numeric readings and on/off state labels. User names, entity IDs, integration diagnostics and service values remain unchanged.
